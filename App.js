@@ -16,6 +16,7 @@ import FeedScreen from './src/screens/FeedScreen';
 import CreatePostScreen from './src/screens/CreatePostScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import ComingSoonScreen from './src/screens/ComingSoonScreen';
+import RetosScreen from './src/screens/RetosScreen';
 import UserProfileScreen from './src/screens/UserProfileScreen';
 import PostDetailScreen from './src/screens/PostDetailScreen';
 import MeetupsScreen from './src/screens/MeetupsScreen';
@@ -24,6 +25,11 @@ import MeetupDetailScreen from './src/screens/MeetupDetailScreen';
 import ChatListScreen from './src/screens/ChatListScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
+import PlacesScreen from './src/screens/PlacesScreen';
+import CreatePlaceScreen from './src/screens/CreatePlaceScreen';
+import PlaceDetailScreen from './src/screens/PlaceDetailScreen';
+import SearchScreen from './src/screens/SearchScreen';
+import EditProfileScreen from './src/screens/EditProfileScreen';
 import { registerForPushNotificationsAsync } from './src/lib/pushNotifications';
 
 const Stack = createNativeStackNavigator();
@@ -48,7 +54,7 @@ function Tabs() {
       })}
     >
       <Tab.Screen name="Feed" component={FeedScreen} />
-      <Tab.Screen name="Retos" component={ComingSoonScreen} initialParams={{ icon: 'trophy-outline', title: 'Retos y medallas', phase: 'Fase 2' }} />
+      <Tab.Screen name="Retos" component={RetosScreen} />
       <Tab.Screen name="Quedadas" component={MeetupsScreen} />
       <Tab.Screen name="Chat" component={ChatListScreen} />
       <Tab.Screen name="Perfil" component={ProfileScreen} />
@@ -89,6 +95,11 @@ function RootNavigator() {
           <Stack.Screen name="MeetupDetail" component={MeetupDetailScreen} options={{ headerShown: true, title: 'Quedada' }} />
           <Stack.Screen name="Conversation" component={ChatScreen} options={{ headerShown: true, title: 'Chat' }} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: true, title: 'Notificaciones' }} />
+          <Stack.Screen name="Places" component={PlacesScreen} />
+          <Stack.Screen name="CreatePlace" component={CreatePlaceScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nuevo sitio' }} />
+          <Stack.Screen name="PlaceDetail" component={PlaceDetailScreen} options={{ headerShown: true, title: 'Sitio' }} />
+          <Stack.Screen name="Search" component={SearchScreen} />
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ presentation: 'modal', headerShown: true, title: 'Editar perfil' }} />
         </>
       )}
     </Stack.Navigator>
