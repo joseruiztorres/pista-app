@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { colors } from '../lib/theme';
 
@@ -9,31 +9,30 @@ export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
 
   async function handleSubmit() {
     if (!email || !password) {
-      Alert.alert('Faltan datos', 'Escribe email y contraseña.');
+      setMessage('Escribe email y contraseña.');
       return;
     }
+    setMessage('');
     setBusy(true);
     try {
       if (mode === 'signup') {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const handle = (username || email.split('@')[0]).toLowerCase().replace(/[^a-z0-9_]/g, '');
+        const { data, error } = await supabase.auth.signUp({
+          email, password,
+          options: { data: { username: handle, display_name: username || email.split('@')[0] } },
+        });
         if (error) throw error;
-        if (data.user) {
-          const { error: profileError } = await supabase.from('profiles').insert({
-            id: data.user.id,
-            username: (username || email.split('@')[0]).toLowerCase().replace(/\s+/g, ''),
-            display_name: username || email.split('@')[0],
-          });
-          if (profileError) throw profileError;
-        }
+        if (!data.session) setMessage('Revisa tu correo para confirmar la cuenta y después entra aquí.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
     } catch (err) {
-      Alert.alert('No se pudo continuar', err.message);
+      setMessage(err.message || 'No se pudo continuar. Inténtalo otra vez.');
     } finally {
       setBusy(false);
     }
@@ -72,6 +71,8 @@ export default function LoginScreen() {
           </Text>
         </Pressable>
 
+        {!!message && <Text accessibilityRole="alert" style={styles.message}>{message}</Text>}
+
         <Pressable onPress={() => setMode(mode === 'signup' ? 'signin' : 'signup')}>
           <Text style={styles.switch}>
             {mode === 'signup' ? '¿Ya tienes cuenta? Entra' : '¿Nuevo en Pista? Crea una cuenta'}
@@ -97,4 +98,5 @@ const styles = StyleSheet.create({
   btnPrimary: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
   btnPrimaryText: { color: '#06110B', fontSize: 16, fontWeight: '700' },
   switch: { color: colors.textDim, textAlign: 'center', marginTop: 4, fontSize: 13 },
+  message: { color: colors.text, textAlign: 'center', fontSize: 13, lineHeight: 19 },
 });
