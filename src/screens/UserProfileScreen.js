@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthProvider';
 import { iconForBadge } from '../lib/badges';
 import { colors } from '../lib/theme';
 import FollowButton from '../components/FollowButton';
+import MessageButton from '../components/MessageButton';
 import PostCard from '../components/PostCard';
 
 const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position), comments(count)';
@@ -98,7 +99,10 @@ export default function UserProfileScreen({ route, navigation }) {
             <View style={styles.stat}><Text style={styles.statValue}>{posts.length}</Text><Text style={styles.statLabel}>Publicaciones</Text></View>
           </View>
 
-          <FollowButton profileId={profile.id} />
+          <View style={styles.actionsRow}>
+            <FollowButton profileId={profile.id} />
+            <MessageButton profileId={profile.id} profileName={profile.display_name || profile.username} />
+          </View>
 
           {badges.length > 0 && (
             <View style={styles.badgesRow}>
@@ -126,6 +130,7 @@ const styles = StyleSheet.create({
   name: { color: colors.text, fontSize: 18, fontWeight: '700' },
   handle: { color: colors.textDim, fontSize: 13 },
   statsRow: { flexDirection: 'row', gap: 24, marginTop: 12, marginBottom: 4 },
+  actionsRow: { flexDirection: 'row', gap: 10 },
   stat: { alignItems: 'center' },
   statValue: { color: colors.text, fontWeight: '800', fontSize: 16 },
   statLabel: { color: colors.textDim, fontSize: 11 },
