@@ -18,6 +18,9 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import ComingSoonScreen from './src/screens/ComingSoonScreen';
 import UserProfileScreen from './src/screens/UserProfileScreen';
 import PostDetailScreen from './src/screens/PostDetailScreen';
+import MeetupsScreen from './src/screens/MeetupsScreen';
+import CreateMeetupScreen from './src/screens/CreateMeetupScreen';
+import MeetupDetailScreen from './src/screens/MeetupDetailScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -42,7 +45,7 @@ function Tabs() {
     >
       <Tab.Screen name="Feed" component={FeedScreen} />
       <Tab.Screen name="Retos" component={ComingSoonScreen} initialParams={{ icon: 'trophy-outline', title: 'Retos y medallas', phase: 'Fase 2' }} />
-      <Tab.Screen name="Quedadas" component={ComingSoonScreen} initialParams={{ icon: 'location-outline', title: 'Quedadas cerca de ti', phase: 'Fase 3' }} />
+      <Tab.Screen name="Quedadas" component={MeetupsScreen} />
       <Tab.Screen name="Chat" component={ComingSoonScreen} initialParams={{ icon: 'chatbubble-outline', title: 'Chat', phase: 'Fase 4' }} />
       <Tab.Screen name="Perfil" component={ProfileScreen} />
     </Tab.Navigator>
@@ -72,6 +75,8 @@ function RootNavigator() {
           <Stack.Screen name="CrearPost" component={CreatePostScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nueva publicación' }} />
           <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ headerShown: true, title: 'Perfil' }} />
           <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ headerShown: true, title: 'Publicación' }} />
+          <Stack.Screen name="CreateMeetup" component={CreateMeetupScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nueva quedada' }} />
+          <Stack.Screen name="MeetupDetail" component={MeetupDetailScreen} options={{ headerShown: true, title: 'Quedada' }} />
         </>
       )}
     </Stack.Navigator>
