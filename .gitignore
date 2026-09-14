@@ -1,6 +1,7 @@
 node_modules/
 .expo/
 dist/
+.npm-cache/
 .env
 *.log
 .DS_Store
