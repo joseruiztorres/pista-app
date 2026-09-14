@@ -1,6 +1,6 @@
 import 'react-native-url-polyfill/auto';
-import React from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, ActivityIndicator, Platform } from 'react-native';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -23,6 +23,8 @@ import CreateMeetupScreen from './src/screens/CreateMeetupScreen';
 import MeetupDetailScreen from './src/screens/MeetupDetailScreen';
 import ChatListScreen from './src/screens/ChatListScreen';
 import ChatScreen from './src/screens/ChatScreen';
+import NotificationsScreen from './src/screens/NotificationsScreen';
+import { registerForPushNotificationsAsync } from './src/lib/pushNotifications';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -57,6 +59,12 @@ function Tabs() {
 function RootNavigator() {
   const { session, profile, loading } = useAuth();
 
+  useEffect(() => {
+    if (Platform.OS !== 'web' && session?.user?.id && profile?.onboarded) {
+      registerForPushNotificationsAsync(session.user.id).catch(() => {});
+    }
+  }, [session, profile]);
+
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
@@ -80,6 +88,7 @@ function RootNavigator() {
           <Stack.Screen name="CreateMeetup" component={CreateMeetupScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nueva quedada' }} />
           <Stack.Screen name="MeetupDetail" component={MeetupDetailScreen} options={{ headerShown: true, title: 'Quedada' }} />
           <Stack.Screen name="Conversation" component={ChatScreen} options={{ headerShown: true, title: 'Chat' }} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: true, title: 'Notificaciones' }} />
         </>
       )}
     </Stack.Navigator>
