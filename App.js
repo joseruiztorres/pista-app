@@ -16,6 +16,8 @@ import FeedScreen from './src/screens/FeedScreen';
 import CreatePostScreen from './src/screens/CreatePostScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import ComingSoonScreen from './src/screens/ComingSoonScreen';
+import UserProfileScreen from './src/screens/UserProfileScreen';
+import PostDetailScreen from './src/screens/PostDetailScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -68,6 +70,8 @@ function RootNavigator() {
         <>
           <Stack.Screen name="Tabs" component={Tabs} />
           <Stack.Screen name="CrearPost" component={CreatePostScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nueva publicación' }} />
+          <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ headerShown: true, title: 'Perfil' }} />
+          <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ headerShown: true, title: 'Publicación' }} />
         </>
       )}
     </Stack.Navigator>
