@@ -7,28 +7,31 @@ import RoutePreview from './RoutePreview';
 
 const TYPE_LABEL = { ruta: 'Ruta', progreso: 'Progreso', comida: 'Comida', tip: 'Tip', resena: 'Reseña' };
 
-export default function PostCard({ post, liked, onToggleLike }) {
+export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onPressComments }) {
   const author = post.profiles || {};
   const details = post.details || {};
+  const commentCount = post.comments?.[0]?.count ?? 0;
 
   return (
     <View style={styles.card}>
       <View style={styles.head}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{(author.display_name || author.username || '?').slice(0, 2).toUpperCase()}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <View style={styles.nameRow}>
-            <Text style={styles.name}>{author.display_name || author.username}</Text>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>{TYPE_LABEL[post.type] || post.type}</Text>
-            </View>
+        <Pressable style={styles.headPress} onPress={() => onPressAuthor?.(post.author_id)}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{(author.display_name || author.username || '?').slice(0, 2).toUpperCase()}</Text>
           </View>
-          <Text style={styles.meta}>
-            @{author.username} · {new Date(post.created_at).toLocaleDateString('es-ES')}
-            {post.location ? ` · ${post.location}` : ''}
-          </Text>
-        </View>
+          <View style={{ flex: 1 }}>
+            <View style={styles.nameRow}>
+              <Text style={styles.name}>{author.display_name || author.username}</Text>
+              <View style={styles.tag}>
+                <Text style={styles.tagText}>{TYPE_LABEL[post.type] || post.type}</Text>
+              </View>
+            </View>
+            <Text style={styles.meta}>
+              @{author.username} · {new Date(post.created_at).toLocaleDateString('es-ES')}
+              {post.location ? ` · ${post.location}` : ''}
+            </Text>
+          </View>
+        </Pressable>
         {post.sport_id && <Ionicons name={iconFor(post.sport_id)} size={18} color={colors.textDim} />}
       </View>
 
@@ -54,6 +57,10 @@ export default function PostCard({ post, liked, onToggleLike }) {
           <Ionicons name={liked ? 'heart' : 'heart-outline'} size={18} color={liked ? colors.clay : colors.textDim} />
           <Text style={[styles.actionText, liked && { color: colors.clay }]}>{(post.like_count || 0) + (liked ? 1 : 0)}</Text>
         </Pressable>
+        <Pressable style={styles.action} onPress={() => onPressComments?.(post.id)}>
+          <Ionicons name="chatbubble-outline" size={18} color={colors.textDim} />
+          <Text style={styles.actionText}>{commentCount}</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -71,6 +78,7 @@ function Stat({ label, value }) {
 const styles = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderRadius: 18, borderWidth: 1, borderColor: colors.line, padding: 14, gap: 10 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  headPress: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: colors.bg, fontWeight: '700', fontSize: 13 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
