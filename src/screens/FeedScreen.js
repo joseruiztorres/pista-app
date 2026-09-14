@@ -8,7 +8,7 @@ import PostCard from '../components/PostCard';
 import DailyChallengeCard from '../components/DailyChallengeCard';
 import { colors } from '../lib/theme';
 
-const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position), comments(count)';
+const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position), comments(count), place:place_id(name)';
 
 export default function FeedScreen({ navigation }) {
   const { user } = useAuth();
@@ -91,6 +91,12 @@ export default function FeedScreen({ navigation }) {
       <View style={styles.topbar}>
         <Text style={styles.wordmark}>PISTA</Text>
         <View style={styles.topbarActions}>
+          <Pressable style={styles.bellWrap} onPress={() => navigation.navigate('Search')}>
+            <Ionicons name="search-outline" size={21} color={colors.text} />
+          </Pressable>
+          <Pressable style={styles.bellWrap} onPress={() => navigation.navigate('Places')}>
+            <Ionicons name="location-outline" size={22} color={colors.text} />
+          </Pressable>
           <Pressable style={styles.bellWrap} onPress={() => navigation.navigate('Notifications')}>
             <Ionicons name="notifications-outline" size={22} color={colors.text} />
             {unread > 0 && (
@@ -150,7 +156,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   topbar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
   wordmark: { color: colors.accent, fontSize: 22, fontWeight: '800', letterSpacing: 1 },
-  topbarActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  topbarActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bellWrap: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: 1, right: 1, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: colors.clay, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   badgeText: { color: colors.bg, fontSize: 9, fontWeight: '800' },
