@@ -1,24 +1,41 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, RefreshControl, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
+import { iconFor } from '../lib/sports';
 import PostCard from '../components/PostCard';
 import DailyChallengeCard from '../components/DailyChallengeCard';
 import { colors } from '../lib/theme';
+
+const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position), comments(count)';
 
 export default function FeedScreen({ navigation }) {
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [likedIds, setLikedIds] = useState({});
   const [refreshing, setRefreshing] = useState(false);
+  const [sports, setSports] = useState([]);
+  const [filter, setFilter] = useState('todo'); // 'todo' | 'siguiendo' | un sport_id
+
+  useEffect(() => {
+    supabase.from('sports').select('*').order('name').then(({ data }) => setSports(data || []));
+  }, []);
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('posts')
-      .select('*, profiles:author_id(username, display_name), post_media(url, position)')
-      .order('created_at', { ascending: false })
-      .limit(30);
+    let query = supabase.from('posts').select(POST_SELECT).order('created_at', { ascending: false }).limit(30);
+
+    if (filter === 'siguiendo') {
+      if (!user) { setPosts([]); return; }
+      const { data: followingRows } = await supabase.from('follows').select('following_id').eq('follower_id', user.id);
+      const ids = (followingRows || []).map((f) => f.following_id);
+      if (ids.length === 0) { setPosts([]); return; }
+      query = query.in('author_id', ids);
+    } else if (filter !== 'todo') {
+      query = query.eq('sport_id', filter);
+    }
+
+    const { data, error } = await query;
     if (!error) setPosts(data || []);
 
     if (user) {
@@ -27,7 +44,7 @@ export default function FeedScreen({ navigation }) {
       (likes || []).forEach((l) => { map[l.post_id] = true; });
       setLikedIds(map);
     }
-  }, [user]);
+  }, [user, filter]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -50,19 +67,45 @@ export default function FeedScreen({ navigation }) {
           <Ionicons name="add" size={22} color={colors.bg} />
         </Pressable>
       </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filters} contentContainerStyle={styles.filtersContent}>
+        <FilterChip label="Todo" active={filter === 'todo'} onPress={() => setFilter('todo')} />
+        <FilterChip label="Siguiendo" active={filter === 'siguiendo'} onPress={() => setFilter('siguiendo')} />
+        {sports.map((s) => (
+          <FilterChip key={s.id} label={s.name} icon={iconFor(s.id)} active={filter === s.id} onPress={() => setFilter(s.id)} />
+        ))}
+      </ScrollView>
+
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={colors.accent} />}
-        ListHeaderComponent={<DailyChallengeCard />}
+        ListHeaderComponent={filter === 'todo' ? <DailyChallengeCard /> : null}
         ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
-        ListEmptyComponent={<Text style={styles.empty}>Todavía no hay publicaciones. ¡Sé el primero!</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>
+          {filter === 'siguiendo' ? 'Todavía no sigues a nadie con publicaciones.' : 'Todavía no hay publicaciones. ¡Sé el primero!'}
+        </Text>}
         renderItem={({ item }) => (
-          <PostCard post={item} liked={!!likedIds[item.id]} onToggleLike={() => toggleLike(item)} />
+          <PostCard
+            post={item}
+            liked={!!likedIds[item.id]}
+            onToggleLike={() => toggleLike(item)}
+            onPressAuthor={(profileId) => navigation.navigate('UserProfile', { profileId })}
+            onPressComments={(postId) => navigation.navigate('PostDetail', { postId })}
+          />
         )}
       />
     </View>
+  );
+}
+
+function FilterChip({ label, icon, active, onPress }) {
+  return (
+    <Pressable style={[styles.chip, active && styles.chipActive]} onPress={onPress}>
+      {icon && <Ionicons name={icon} size={13} color={active ? colors.bg : colors.textDim} />}
+      <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -71,6 +114,12 @@ const styles = StyleSheet.create({
   topbar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
   wordmark: { color: colors.accent, fontSize: 22, fontWeight: '800', letterSpacing: 1 },
   fab: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
+  filters: { flexGrow: 0 },
+  filtersContent: { paddingHorizontal: 16, gap: 8, paddingBottom: 10 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  chipActive: { backgroundColor: colors.accent },
+  chipText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
+  chipTextActive: { color: colors.bg },
   list: { padding: 16, paddingTop: 6, gap: 14 },
   empty: { color: colors.textDim, textAlign: 'center', marginTop: 40 },
 });
