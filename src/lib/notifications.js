@@ -1,0 +1,44 @@
+// Helpers para el centro de notificaciones: icono y texto por tipo.
+// `data` es JSONB libre (post_id, meetup_id, conversation_id, badge_id...)
+
+export function iconForNotif(type) {
+  switch (type) {
+    case 'follow': return 'person-add-outline';
+    case 'like': return 'heart';
+    case 'comment': return 'chatbubble-outline';
+    case 'badge': return 'ribbon-outline';
+    case 'meetup_join': return 'location-outline';
+    case 'message': return 'chatbubble-ellipses-outline';
+    default: return 'notifications-outline';
+  }
+}
+
+function actorName(n) {
+  return n.actor?.display_name || n.actor?.username || 'Alguien';
+}
+
+export function textForNotif(n) {
+  const name = actorName(n);
+  switch (n.type) {
+    case 'follow': return `${name} empezó a seguirte`;
+    case 'like': return `${name} le dio like a tu publicación`;
+    case 'comment': return `${name} comentó tu publicación`;
+    case 'badge': return `Has conseguido una medalla nueva`;
+    case 'meetup_join': return `${name} se apuntó a tu quedada`;
+    case 'message': return `${name} te ha enviado un mensaje`;
+    default: return 'Nueva notificación';
+  }
+}
+
+// Devuelve { screen, params } para navegar al pulsar la notificación.
+export function targetForNotif(n) {
+  switch (n.type) {
+    case 'follow': return { screen: 'UserProfile', params: { profileId: n.actor_id } };
+    case 'like':
+    case 'comment': return { screen: 'PostDetail', params: { postId: n.data?.post_id } };
+    case 'badge': return { screen: 'Tabs', params: { screen: 'Perfil' } };
+    case 'meetup_join': return { screen: 'MeetupDetail', params: { meetupId: n.data?.meetup_id } };
+    case 'message': return { screen: 'Conversation', params: { conversationId: n.data?.conversation_id, otherName: actorName(n) } };
+    default: return null;
+  }
+}
