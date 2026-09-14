@@ -8,6 +8,7 @@ import { colors } from '../lib/theme';
 import FollowButton from '../components/FollowButton';
 import MessageButton from '../components/MessageButton';
 import PostCard from '../components/PostCard';
+import Avatar from '../components/Avatar';
 
 const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position), comments(count)';
 
@@ -87,11 +88,10 @@ export default function UserProfileScreen({ route, navigation }) {
       )}
       ListHeaderComponent={
         <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{(profile.display_name || profile.username || '?').slice(0, 2).toUpperCase()}</Text>
-          </View>
+          <Avatar url={profile.avatar_url} name={profile.display_name || profile.username} size={72} />
           <Text style={styles.name}>{profile.display_name || profile.username}</Text>
           <Text style={styles.handle}>@{profile.username}</Text>
+          {!!profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
 
           <View style={styles.statsRow}>
             <View style={styles.stat}><Text style={styles.statValue}>{counts.followers}</Text><Text style={styles.statLabel}>Seguidores</Text></View>
@@ -125,10 +125,9 @@ const styles = StyleSheet.create({
   center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   empty: { color: colors.textDim, textAlign: 'center', marginTop: 20 },
   header: { alignItems: 'center', gap: 6, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: colors.line, marginBottom: 4 },
-  avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  avatarText: { color: colors.bg, fontSize: 22, fontWeight: '800' },
-  name: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  name: { color: colors.text, fontSize: 18, fontWeight: '700', marginTop: 4 },
   handle: { color: colors.textDim, fontSize: 13 },
+  bio: { color: colors.text, fontSize: 13, textAlign: 'center', paddingHorizontal: 24, marginTop: 6 },
   statsRow: { flexDirection: 'row', gap: 24, marginTop: 12, marginBottom: 4 },
   actionsRow: { flexDirection: 'row', gap: 10 },
   stat: { alignItems: 'center' },
