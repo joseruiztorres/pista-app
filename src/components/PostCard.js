@@ -46,6 +46,24 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
         </View>
       )}
 
+      {post.type === 'resena' && (post.place || details.rating) && (
+        <View style={styles.reviewRow}>
+          {post.place?.name && (
+            <View style={styles.placePill}>
+              <Ionicons name="location-outline" size={12} color={colors.textDim} />
+              <Text style={styles.placePillText}>{post.place.name}</Text>
+            </View>
+          )}
+          {!!details.rating && (
+            <View style={styles.starsRow}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <Ionicons key={n} name={n <= details.rating ? 'star' : 'star-outline'} size={13} color={colors.amber} />
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+
       {post.post_media && post.post_media[0] && (
         <Image source={{ uri: post.post_media[0].url }} style={styles.image} />
       )}
@@ -87,6 +105,10 @@ const styles = StyleSheet.create({
   tagText: { color: colors.textDim, fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
   meta: { color: colors.textDim, fontSize: 11, marginTop: 2 },
   statsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  reviewRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  placePill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  placePillText: { color: colors.textDim, fontSize: 11, fontWeight: '600' },
+  starsRow: { flexDirection: 'row', gap: 1 },
   statChip: { backgroundColor: colors.surface2, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 },
   statLabel: { color: colors.textDim, fontSize: 10 },
   statValue: { color: colors.text, fontSize: 14, fontWeight: '700' },
