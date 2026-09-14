@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
+import { checkStreakBadges } from '../lib/awardBadges';
 import { colors } from '../lib/theme';
 
 export default function DailyChallengeCard() {
@@ -31,6 +32,7 @@ export default function DailyChallengeCard() {
   async function markDone(sportId) {
     if (!user) return;
     await supabase.from('daily_checkins').insert({ profile_id: user.id, sport_id: sportId });
+    await checkStreakBadges(user.id);
     load();
   }
 
