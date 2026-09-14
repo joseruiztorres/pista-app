@@ -17,10 +17,37 @@ export default function FeedScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [sports, setSports] = useState([]);
   const [filter, setFilter] = useState('todo'); // 'todo' | 'siguiendo' | un sport_id
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     supabase.from('sports').select('*').order('name').then(({ data }) => setSports(data || []));
   }, []);
+
+  const loadUnread = useCallback(async () => {
+    if (!user) { setUnread(0); return; }
+    const { count } = await supabase
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('recipient_id', user.id)
+      .eq('read', false);
+    setUnread(count || 0);
+  }, [user]);
+
+  useEffect(() => { loadUnread(); }, [loadUnread]);
+  useEffect(() => {
+    const unsub = navigation.addListener('focus', loadUnread);
+    return unsub;
+  }, [navigation, loadUnread]);
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`notifications:${user.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `recipient_id=eq.${user.id}` }, () => {
+        setUnread((n) => n + 1);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   const load = useCallback(async () => {
     let query = supabase.from('posts').select(POST_SELECT).order('created_at', { ascending: false }).limit(30);
@@ -63,9 +90,19 @@ export default function FeedScreen({ navigation }) {
     <View style={styles.screen}>
       <View style={styles.topbar}>
         <Text style={styles.wordmark}>PISTA</Text>
-        <Pressable style={styles.fab} onPress={() => navigation.navigate('CrearPost')}>
-          <Ionicons name="add" size={22} color={colors.bg} />
-        </Pressable>
+        <View style={styles.topbarActions}>
+          <Pressable style={styles.bellWrap} onPress={() => navigation.navigate('Notifications')}>
+            <Ionicons name="notifications-outline" size={22} color={colors.text} />
+            {unread > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unread > 9 ? '9+' : unread}</Text>
+              </View>
+            )}
+          </Pressable>
+          <Pressable style={styles.fab} onPress={() => navigation.navigate('CrearPost')}>
+            <Ionicons name="add" size={22} color={colors.bg} />
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filters} contentContainerStyle={styles.filtersContent}>
@@ -113,6 +150,10 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   topbar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
   wordmark: { color: colors.accent, fontSize: 22, fontWeight: '800', letterSpacing: 1 },
+  topbarActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  bellWrap: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  badge: { position: 'absolute', top: 1, right: 1, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: colors.clay, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
+  badgeText: { color: colors.bg, fontSize: 9, fontWeight: '800' },
   fab: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
   filters: { flexGrow: 0 },
   filtersContent: { paddingHorizontal: 16, gap: 8, paddingBottom: 10 },
