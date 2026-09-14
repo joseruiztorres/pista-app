@@ -4,9 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconForBadge } from '../lib/badges';
+import Avatar from '../components/Avatar';
 import { colors } from '../lib/theme';
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }) {
   const { profile, user, signOut } = useAuth();
   const [badges, setBadges] = useState([]);
   const [counts, setCounts] = useState({ followers: 0, following: 0, posts: 0 });
@@ -27,11 +28,15 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{(profile?.display_name || profile?.username || '?').slice(0, 2).toUpperCase()}</Text>
-      </View>
+      <Avatar url={profile?.avatar_url} name={profile?.display_name || profile?.username} size={72} />
       <Text style={styles.name}>{profile?.display_name || profile?.username}</Text>
       <Text style={styles.handle}>@{profile?.username}</Text>
+      {!!profile?.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+
+      <Pressable style={styles.editBtn} onPress={() => navigation.navigate('EditProfile')}>
+        <Ionicons name="create-outline" size={14} color={colors.accentStrong} />
+        <Text style={styles.editBtnText}>Editar perfil</Text>
+      </Pressable>
 
       <View style={styles.statsRow}>
         <View style={styles.stat}><Text style={styles.statValue}>{counts.followers}</Text><Text style={styles.statLabel}>Seguidores</Text></View>
@@ -60,10 +65,11 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', paddingTop: 64, gap: 6 },
-  avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  avatarText: { color: colors.bg, fontSize: 22, fontWeight: '800' },
-  name: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  name: { color: colors.text, fontSize: 18, fontWeight: '700', marginTop: 8 },
   handle: { color: colors.textDim, fontSize: 13 },
+  bio: { color: colors.text, fontSize: 13, textAlign: 'center', paddingHorizontal: 32, marginTop: 6 },
+  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
+  editBtnText: { color: colors.accentStrong, fontSize: 13, fontWeight: '700' },
   statsRow: { flexDirection: 'row', gap: 24, marginTop: 16 },
   stat: { alignItems: 'center' },
   statValue: { color: colors.text, fontWeight: '800', fontSize: 16 },
