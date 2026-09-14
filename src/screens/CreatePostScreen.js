@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
+import { checkFirstPostBadge } from '../lib/awardBadges';
 import { colors } from '../lib/theme';
 
 const TYPES = [
@@ -86,7 +87,7 @@ export default function CreatePostScreen({ navigation }) {
 
       if (image) {
         const ext = image.uri.split('.').pop();
-                const path = `${user.id}/${post.id}.${ext}`;
+        const path = `${user.id}/${post.id}.${ext}`;
         const response = await fetch(image.uri);
         const blob = await response.blob();
         const { error: uploadError } = await supabase.storage.from('media').upload(path, blob, { contentType: image.mimeType || 'image/jpeg' });
@@ -96,6 +97,7 @@ export default function CreatePostScreen({ navigation }) {
         }
       }
 
+      await checkFirstPostBadge(user.id);
       navigation.goBack();
     } catch (err) {
       Alert.alert('No se pudo publicar', err.message);
