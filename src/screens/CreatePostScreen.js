@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
 import { checkFirstPostBadge } from '../lib/awardBadges';
+import RouteRecorder from '../components/RouteRecorder';
 import { colors } from '../lib/theme';
 
 const TYPES = [
@@ -21,11 +22,11 @@ const TYPES = [
 // también pida estos campos - el resto (BD, feed, tarjeta) ya lo soporta.
 const ROUTE_SPORTS = ['running', 'ciclismo'];
 
-export default function CreatePostScreen({ navigation }) {
+export default function CreatePostScreen({ navigation, route: navRoute }) {
   const { user, sportIds } = useAuth();
   const [sports, setSports] = useState([]);
   const [sportId, setSportId] = useState(null);
-  const [type, setType] = useState('ruta');
+  const [type, setType] = useState(navRoute?.params?.presetType || 'ruta');
   const [caption, setCaption] = useState('');
   const [distanceKm, setDistanceKm] = useState('');
   const [durationMin, setDurationMin] = useState('');
@@ -33,6 +34,11 @@ export default function CreatePostScreen({ navigation }) {
   const [route, setRoute] = useState(null);
   const [image, setImage] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  const [place, setPlace] = useState(navRoute?.params?.presetPlace || null);
+  const [placeQuery, setPlaceQuery] = useState('');
+  const [placeResults, setPlaceResults] = useState([]);
+  const [rating, setRating] = useState(0);
 
   useEffect(() => {
     supabase.from('sports').select('*').order('name').then(({ data }) => {
@@ -43,20 +49,30 @@ export default function CreatePostScreen({ navigation }) {
     });
   }, [sportIds]);
 
+  // Vuelta desde CreatePlaceScreen con el sitio recién creado.
+  useEffect(() => {
+    if (navRoute?.params?.selectedPlace) {
+      setPlace(navRoute.params.selectedPlace);
+      setType('resena');
+    }
+  }, [navRoute?.params?.selectedPlace]);
+
+  useEffect(() => {
+    if (!placeQuery.trim()) { setPlaceResults([]); return; }
+    let active = true;
+    const timer = setTimeout(async () => {
+      const { data } = await supabase.from('places').select('*').ilike('name', `%${placeQuery.trim()}%`).limit(6);
+      if (active) setPlaceResults(data || []);
+    }, 250);
+    return () => { active = false; clearTimeout(timer); };
+  }, [placeQuery]);
+
   const isRouteSport = ROUTE_SPORTS.includes(sportId);
 
-  function generateSampleRoute() {
-    // Placeholder mientras no hay grabación GPS real (Fase 2/3): genera una
-    // ruta con forma plausible alrededor de un punto de Barcelona a modo de
-    // demo, para poder ver ya la vista previa en el feed.
-    const baseLat = 41.4 + Math.random() * 0.02;
-    const baseLng = 2.17 + Math.random() * 0.02;
-    const points = Array.from({ length: 8 }, (_, i) => [
-      baseLat + Math.sin(i * 1.3) * 0.01 + i * 0.002,
-      baseLng + Math.cos(i * 0.9) * 0.01 + i * 0.003,
-    ]);
-    setRoute(points);
-    Alert.alert('Ruta de ejemplo generada', 'Cuando esté la grabación GPS real, esto se sustituye por el trazado de verdad.');
+  function handleRouteFinish({ route: recordedRoute, distanceKm: d, durationMin: m }) {
+    setRoute(recordedRoute);
+    setDistanceKm(d.toFixed(2));
+    setDurationMin(String(m));
   }
 
   async function pickImage() {
@@ -77,10 +93,11 @@ export default function CreatePostScreen({ navigation }) {
         if (elevationM) details.elevation_m = Number(elevationM);
         if (route) details.route = route;
       }
+      if (type === 'resena' && rating) details.rating = rating;
 
       const { data: post, error } = await supabase
         .from('posts')
-        .insert({ author_id: user.id, sport_id: sportId, type, caption, details })
+        .insert({ author_id: user.id, sport_id: sportId, type, caption, details, place_id: type === 'resena' ? place?.id || null : null })
         .select()
         .single();
       if (error) throw error;
@@ -130,7 +147,8 @@ export default function CreatePostScreen({ navigation }) {
 
       {type === 'ruta' && isRouteSport && (
         <Field label="Datos de la ruta">
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          <RouteRecorder onFinish={handleRouteFinish} />
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
             <TextInput style={[styles.input, { flex: 1 }]} placeholder="km" placeholderTextColor={colors.textDim}
               keyboardType="numeric" value={distanceKm} onChangeText={setDistanceKm} />
             <TextInput style={[styles.input, { flex: 1 }]} placeholder="min" placeholderTextColor={colors.textDim}
@@ -138,10 +156,45 @@ export default function CreatePostScreen({ navigation }) {
             <TextInput style={[styles.input, { flex: 1 }]} placeholder="desnivel m" placeholderTextColor={colors.textDim}
               keyboardType="numeric" value={elevationM} onChangeText={setElevationM} />
           </View>
-          <Pressable style={styles.secondaryBtn} onPress={generateSampleRoute}>
-            <Ionicons name="map-outline" size={16} color={colors.accentStrong} />
-            <Text style={styles.secondaryBtnText}>{route ? 'Ruta añadida ✓' : 'Añadir trazado de ejemplo'}</Text>
-          </Pressable>
+          <Text style={styles.hint}>La distancia y el tiempo se rellenan solos al grabar con GPS; también puedes editarlos a mano.</Text>
+        </Field>
+      )}
+
+      {type === 'resena' && (
+        <Field label="Sitio">
+          {place ? (
+            <View style={styles.selectedPlace}>
+              <Ionicons name="location" size={16} color={colors.accent} />
+              <Text style={styles.selectedPlaceText}>{place.name}</Text>
+              <Pressable onPress={() => setPlace(null)}>
+                <Ionicons name="close-circle" size={18} color={colors.textDim} />
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <TextInput style={styles.input} placeholder="Busca un gimnasio, parque, ruta…" placeholderTextColor={colors.textDim}
+                value={placeQuery} onChangeText={setPlaceQuery} />
+              {placeResults.map((p) => (
+                <Pressable key={p.id} style={styles.placeResultRow} onPress={() => { setPlace(p); setPlaceQuery(''); setPlaceResults([]); }}>
+                  <Ionicons name="location-outline" size={14} color={colors.textDim} />
+                  <Text style={styles.placeResultText}>{p.name}</Text>
+                </Pressable>
+              ))}
+              <Pressable style={styles.secondaryBtn} onPress={() => navigation.navigate('CreatePlace', { returnTo: 'CrearPost' })}>
+                <Ionicons name="add-circle-outline" size={16} color={colors.accentStrong} />
+                <Text style={styles.secondaryBtnText}>Añadir un sitio nuevo</Text>
+              </Pressable>
+            </>
+          )}
+
+          <Text style={[styles.label, { marginTop: 6 }]}>Tu nota</Text>
+          <View style={{ flexDirection: 'row', gap: 4 }}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Pressable key={n} onPress={() => setRating(n)}>
+                <Ionicons name={n <= rating ? 'star' : 'star-outline'} size={26} color={colors.amber} />
+              </Pressable>
+            ))}
+          </View>
         </Field>
       )}
 
@@ -195,11 +248,16 @@ const styles = StyleSheet.create({
     borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14,
   },
   textarea: { minHeight: 80, textAlignVertical: 'top' },
+  hint: { color: colors.textDim, fontSize: 11 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   chipActive: { backgroundColor: colors.accent },
   chipText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },
   secondaryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 4 },
   secondaryBtnText: { color: colors.accentStrong, fontSize: 13, fontWeight: '600' },
+  selectedPlace: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface2, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  selectedPlaceText: { flex: 1, color: colors.text, fontSize: 13, fontWeight: '600' },
+  placeResultRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
+  placeResultText: { color: colors.text, fontSize: 13 },
   imagePicker: { height: 140, borderRadius: 14, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center', gap: 6, overflow: 'hidden' },
   imagePickerText: { color: colors.textDim, fontSize: 13 },
   imagePreview: { width: '100%', height: '100%' },
