@@ -101,16 +101,22 @@ export default function CreatePlaceScreen({ navigation, route }) {
       <Field label="Dirección (opcional)">
         <TextInput style={styles.input} placeholder="Calle, ciudad…" placeholderTextColor={colors.textDim}
           value={address} onChangeText={setAddress} />
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TextInput style={[styles.input, { flex: 1 }]} placeholder="lat" placeholderTextColor={colors.textDim}
-            keyboardType="numeric" value={lat} onChangeText={setLat} />
-          <TextInput style={[styles.input, { flex: 1 }]} placeholder="lng" placeholderTextColor={colors.textDim}
-            keyboardType="numeric" value={lng} onChangeText={setLng} />
-        </View>
-        <Pressable style={styles.secondaryBtn} onPress={useMyLocation} disabled={locating}>
-          <Ionicons name="navigate-outline" size={16} color={colors.accentStrong} />
-          <Text style={styles.secondaryBtnText}>{locating ? 'Localizando…' : 'Usar mi ubicación actual'}</Text>
-        </Pressable>
+
+        {lat && lng ? (
+          <View style={styles.locatedRow}>
+            <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
+            <Text style={styles.locatedText}>Ubicación en el mapa guardada</Text>
+            <Pressable onPress={() => { setLat(''); setLng(''); }}>
+              <Text style={styles.locatedRemove}>Quitar</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable style={styles.secondaryBtn} onPress={useMyLocation} disabled={locating}>
+            <Ionicons name="navigate-outline" size={16} color={colors.accentStrong} />
+            <Text style={styles.secondaryBtnText}>{locating ? 'Localizando…' : 'Usar mi ubicación actual (si estás ahí ahora)'}</Text>
+          </Pressable>
+        )}
+        <Text style={styles.hint}>Esto añade el sitio al mapa. No hace falta si solo quieres escribir la dirección.</Text>
       </Field>
 
       <Pressable style={styles.btnPrimary} onPress={handleSave} disabled={saving}>
@@ -150,6 +156,10 @@ const styles = StyleSheet.create({
   chipText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },
   secondaryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 4 },
   secondaryBtnText: { color: colors.accentStrong, fontSize: 13, fontWeight: '600' },
+  locatedRow: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, alignSelf: 'flex-start' },
+  locatedText: { color: colors.text, fontSize: 12, fontWeight: '600', flex: 1 },
+  locatedRemove: { color: colors.clay, fontSize: 12, fontWeight: '700' },
+  hint: { color: colors.textDim, fontSize: 11, marginTop: 4 },
   btnPrimary: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 8, marginBottom: 32 },
   btnPrimaryText: { color: colors.bg, fontSize: 16, fontWeight: '700' },
 });
