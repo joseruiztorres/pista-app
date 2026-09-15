@@ -14,3 +14,30 @@ export async function getCurrentCoordinates() {
     lng: Number(current.coords.longitude.toFixed(5)),
   };
 }
+
+// Convierte una dirección normal en coordenadas. La búsqueda solo se ejecuta
+// cuando la persona pulsa "Ver en el mapa", para evitar peticiones innecesarias.
+export async function geocodeLocation(query) {
+  const text = query?.trim();
+  if (!text || text.length < 3) throw new Error('location-query-too-short');
+
+  const params = new URLSearchParams({
+    format: 'jsonv2',
+    limit: '1',
+    'accept-language': 'es',
+    q: text,
+  });
+  const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) throw new Error('location-search-failed');
+
+  const [match] = await response.json();
+  if (!match) throw new Error('location-not-found');
+
+  return {
+    lat: Number(Number(match.lat).toFixed(5)),
+    lng: Number(Number(match.lon).toFixed(5)),
+    displayName: match.display_name,
+  };
+}
