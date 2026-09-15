@@ -110,10 +110,10 @@ function RootNavigator() {
           <Stack.Screen name="MeetupDetail" component={MeetupDetailScreen} options={{ headerShown: true, title: 'Quedada' }} />
           <Stack.Screen name="Conversation" component={ChatScreen} options={{ headerShown: true, title: 'Chat' }} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: true, title: 'Notificaciones' }} />
-          <Stack.Screen name="Places" component={PlacesScreen} />
+          <Stack.Screen name="Places" component={PlacesScreen} options={{ headerShown: true, title: 'Sitios' }} />
           <Stack.Screen name="CreatePlace" component={CreatePlaceScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nuevo sitio' }} />
           <Stack.Screen name="PlaceDetail" component={PlaceDetailScreen} options={{ headerShown: true, title: 'Sitio' }} />
-          <Stack.Screen name="Search" component={SearchScreen} />
+          <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: true, title: 'Buscar' }} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ presentation: 'modal', headerShown: true, title: 'Editar perfil' }} />
           <Stack.Screen name="EditPost" component={EditPostScreen} options={{ presentation: 'modal', headerShown: true, title: 'Editar publicación' }} />
           <Stack.Screen name="FollowRequests" component={FollowRequestsScreen} options={{ headerShown: true, title: 'Solicitudes de seguimiento' }} />
