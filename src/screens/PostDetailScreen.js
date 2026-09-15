@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, FlatList, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { colors } from '../lib/theme';
@@ -55,6 +56,11 @@ export default function PostDetailScreen({ route, navigation }) {
     setSending(false);
   }
 
+  async function deleteComment(commentId) {
+    await supabase.from('comments').delete().eq('id', commentId).eq('author_id', user.id);
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+  }
+
   if (!post) return <View style={styles.screen} />;
 
   return (
@@ -70,14 +76,23 @@ export default function PostDetailScreen({ route, navigation }) {
               liked={liked}
               onToggleLike={toggleLike}
               onPressAuthor={(profileId) => navigation.navigate('UserProfile', { profileId })}
+              onEdit={(p) => navigation.navigate('EditPost', { post: p })}
+              onChanged={() => { load(); navigation.goBack(); }}
             />
           </View>
         }
         ListEmptyComponent={<Text style={styles.empty}>Sé el primero en comentar.</Text>}
         renderItem={({ item }) => (
           <View style={styles.comment}>
-            <Text style={styles.commentAuthor}>{item.profiles?.display_name || item.profiles?.username}</Text>
-            <Text style={styles.commentBody}>{item.body}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.commentAuthor}>{item.profiles?.display_name || item.profiles?.username}</Text>
+              <Text style={styles.commentBody}>{item.body}</Text>
+            </View>
+            {user?.id === item.author_id && (
+              <Pressable hitSlop={8} onPress={() => deleteComment(item.id)}>
+                <Ionicons name="trash-outline" size={15} color={colors.textDim} />
+              </Pressable>
+            )}
           </View>
         )}
       />
@@ -95,7 +110,7 @@ export default function PostDetailScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   empty: { color: colors.textDim, textAlign: 'center', marginTop: 10 },
-  comment: { backgroundColor: colors.surface, borderRadius: 12, padding: 10, gap: 2 },
+  comment: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: colors.surface, borderRadius: 12, padding: 10 },
   commentAuthor: { color: colors.text, fontSize: 12, fontWeight: '700' },
   commentBody: { color: colors.textDim, fontSize: 13, lineHeight: 18 },
   inputRow: { flexDirection: 'row', gap: 8, padding: 12, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.bg },
