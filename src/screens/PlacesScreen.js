@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
+import SportLoader from '../components/SportLoader';
 import { iconFor } from '../lib/sports';
 import { colors } from '../lib/theme';
 
@@ -70,7 +71,7 @@ export default function PlacesScreen({ navigation }) {
       </View>
 
       {loading ? (
-        <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
+        <View style={styles.center}><SportLoader /></View>
       ) : (
         <FlatList
           data={filtered}
