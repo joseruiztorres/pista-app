@@ -8,6 +8,7 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [sportIds, setSportIds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   const loadProfile = useCallback(async (authUser) => {
     if (!authUser) {
@@ -53,9 +54,12 @@ export function AuthProvider({ children }) {
       loadProfile(data.session?.user).finally(() => setLoading(false));
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
       loadProfile(newSession?.user);
+      // Supabase abre una sesión especial al volver del enlace de "olvidé mi
+      // contraseña": la detectamos para mostrar la pantalla de cambio.
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
     });
 
     return () => sub.subscription.unsubscribe();
@@ -70,6 +74,8 @@ export function AuthProvider({ children }) {
     sportIds,
     loading,
     refreshProfile,
+    passwordRecovery,
+    clearPasswordRecovery: () => setPasswordRecovery(false),
     signOut: () => supabase.auth.signOut(),
   };
 
