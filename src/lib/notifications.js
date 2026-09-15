@@ -9,6 +9,8 @@ export function iconForNotif(type) {
     case 'badge': return 'ribbon-outline';
     case 'meetup_join': return 'location-outline';
     case 'message': return 'chatbubble-ellipses-outline';
+    case 'follow_request': return 'person-add-outline';
+    case 'follow_accept': return 'checkmark-circle-outline';
     default: return 'notifications-outline';
   }
 }
@@ -26,6 +28,8 @@ export function textForNotif(n) {
     case 'badge': return `Has conseguido una medalla nueva`;
     case 'meetup_join': return `${name} se apuntó a tu quedada`;
     case 'message': return `${name} te ha enviado un mensaje`;
+    case 'follow_request': return `${name} quiere seguirte`;
+    case 'follow_accept': return `${name} aceptó tu solicitud de seguimiento`;
     default: return 'Nueva notificación';
   }
 }
@@ -39,6 +43,8 @@ export function targetForNotif(n) {
     case 'badge': return { screen: 'Tabs', params: { screen: 'Perfil' } };
     case 'meetup_join': return { screen: 'MeetupDetail', params: { meetupId: n.data?.meetup_id } };
     case 'message': return { screen: 'Conversation', params: { conversationId: n.data?.conversation_id, otherName: actorName(n) } };
+    case 'follow_request': return { screen: 'FollowRequests', params: {} };
+    case 'follow_accept': return { screen: 'UserProfile', params: { profileId: n.actor_id } };
     default: return null;
   }
 }
