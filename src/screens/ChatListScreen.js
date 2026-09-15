@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
+import SportLoader from '../components/SportLoader';
 import { colors } from '../lib/theme';
 
 function formatWhen(iso) {
@@ -65,7 +66,7 @@ export default function ChatListScreen({ navigation }) {
     <View style={styles.screen}>
       <Text style={styles.h1}>Chat</Text>
       {loading ? (
-        <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
+        <View style={styles.center}><SportLoader /></View>
       ) : (
         <FlatList
           data={conversations}
