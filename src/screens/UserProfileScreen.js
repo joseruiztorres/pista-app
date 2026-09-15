@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
+import SportLoader from '../components/SportLoader';
 import { useAuth } from '../context/AuthProvider';
 import { iconForBadge } from '../lib/badges';
 import { colors } from '../lib/theme';
@@ -76,7 +77,7 @@ export default function UserProfileScreen({ route, navigation }) {
   }
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>;
+    return <View style={styles.center}><SportLoader /></View>;
   }
 
   if (!profile) {
