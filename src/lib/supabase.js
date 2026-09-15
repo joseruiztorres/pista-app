@@ -1,4 +1,5 @@
 import 'react-native-url-polyfill/auto';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
@@ -17,6 +18,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storage: AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    // En web hace falta para detectar el token del enlace de "olvidé mi
+    // contraseña" al volver del correo; en nativo no aplica (no hay URL).
+    detectSessionInUrl: Platform.OS === 'web',
   },
 });
