@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, RefreshControl, ScrollView } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, FlatList, Pressable, StyleSheet, RefreshControl, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
@@ -9,15 +9,21 @@ import DailyChallengeCard from '../components/DailyChallengeCard';
 import { colors } from '../lib/theme';
 
 const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position), comments(count), place:place_id(name)';
+const PAGE_SIZE = 15;
 
 export default function FeedScreen({ navigation }) {
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [likedIds, setLikedIds] = useState({});
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [sports, setSports] = useState([]);
   const [filter, setFilter] = useState('todo'); // 'todo' | 'siguiendo' | un sport_id
   const [unread, setUnread] = useState(0);
+
+  const pageRef = useRef(0);
+  const followingIdsRef = useRef([]);
 
   useEffect(() => {
     supabase.from('sports').select('*').order('name').then(({ data }) => setSports(data || []));
@@ -49,21 +55,39 @@ export default function FeedScreen({ navigation }) {
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
-  const load = useCallback(async () => {
-    let query = supabase.from('posts').select(POST_SELECT).order('created_at', { ascending: false }).limit(30);
+  const fetchPage = useCallback(async (pageNum) => {
+    let query = supabase.from('posts').select(POST_SELECT)
+      .order('created_at', { ascending: false })
+      .order('position', { foreignTable: 'post_media' })
+      .range(pageNum * PAGE_SIZE, pageNum * PAGE_SIZE + PAGE_SIZE - 1);
 
     if (filter === 'siguiendo') {
-      if (!user) { setPosts([]); return; }
-      const { data: followingRows } = await supabase.from('follows').select('following_id').eq('follower_id', user.id);
-      const ids = (followingRows || []).map((f) => f.following_id);
-      if (ids.length === 0) { setPosts([]); return; }
-      query = query.in('author_id', ids);
+      if (!followingIdsRef.current.length) return [];
+      query = query.in('author_id', followingIdsRef.current);
     } else if (filter !== 'todo') {
       query = query.eq('sport_id', filter);
     }
 
     const { data, error } = await query;
-    if (!error) setPosts(data || []);
+    return error ? [] : (data || []);
+  }, [filter]);
+
+  const load = useCallback(async () => {
+    pageRef.current = 0;
+    setHasMore(true);
+
+    if (filter === 'siguiendo') {
+      if (!user) { setPosts([]); setHasMore(false); return; }
+      const { data: followingRows } = await supabase.from('follows').select('following_id')
+        .eq('follower_id', user.id).eq('pending', false);
+      followingIdsRef.current = (followingRows || []).map((f) => f.following_id);
+      if (!followingIdsRef.current.length) { setPosts([]); setHasMore(false); return; }
+    }
+
+    const data = await fetchPage(0);
+    setPosts(data);
+    setHasMore(data.length === PAGE_SIZE);
+    pageRef.current = 1;
 
     if (user) {
       const { data: likes } = await supabase.from('likes').select('post_id').eq('profile_id', user.id);
@@ -71,9 +95,19 @@ export default function FeedScreen({ navigation }) {
       (likes || []).forEach((l) => { map[l.post_id] = true; });
       setLikedIds(map);
     }
-  }, [user, filter]);
+  }, [fetchPage, filter, user]);
 
   useEffect(() => { load(); }, [load]);
+
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loadingMore) return;
+    setLoadingMore(true);
+    const data = await fetchPage(pageRef.current);
+    setPosts((prev) => [...prev, ...data]);
+    setHasMore(data.length === PAGE_SIZE);
+    pageRef.current += 1;
+    setLoadingMore(false);
+  }, [fetchPage, hasMore, loadingMore]);
 
   async function toggleLike(post) {
     if (!user) return;
@@ -126,6 +160,9 @@ export default function FeedScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={colors.accent} />}
         ListHeaderComponent={filter === 'todo' ? <DailyChallengeCard /> : null}
         ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
+        onEndReachedThreshold={0.4}
+        onEndReached={loadMore}
+        ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.accent} style={{ marginTop: 14 }} /> : null}
         ListEmptyComponent={<Text style={styles.empty}>
           {filter === 'siguiendo' ? 'Todavía no sigues a nadie con publicaciones.' : 'Todavía no hay publicaciones. ¡Sé el primero!'}
         </Text>}
@@ -136,6 +173,8 @@ export default function FeedScreen({ navigation }) {
             onToggleLike={() => toggleLike(item)}
             onPressAuthor={(profileId) => navigation.navigate('UserProfile', { profileId })}
             onPressComments={(postId) => navigation.navigate('PostDetail', { postId })}
+            onEdit={(post) => navigation.navigate('EditPost', { post })}
+            onChanged={load}
           />
         )}
       />
