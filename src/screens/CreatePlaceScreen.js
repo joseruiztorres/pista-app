@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
+import { getCurrentCoordinates } from '../lib/location';
 import { colors } from '../lib/theme';
 
 export default function CreatePlaceScreen({ navigation, route }) {
@@ -27,24 +28,17 @@ export default function CreatePlaceScreen({ navigation, route }) {
     });
   }, [sportIds]);
 
-  function useMyLocation() {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      Alert.alert('No disponible', 'Este dispositivo no permite compartir ubicación desde aquí.');
-      return;
-    }
+  async function useMyLocation() {
     setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLat(String(pos.coords.latitude.toFixed(5)));
-        setLng(String(pos.coords.longitude.toFixed(5)));
-        setLocating(false);
-      },
-      () => {
-        setLocating(false);
-        Alert.alert('No se pudo obtener la ubicación', 'Comprueba los permisos de ubicación del navegador.');
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+    try {
+      const coords = await getCurrentCoordinates();
+      setLat(String(coords.lat));
+      setLng(String(coords.lng));
+    } catch (_error) {
+      Alert.alert('No se pudo usar tu ubicación', 'Puedes escribir la dirección del sitio manualmente.');
+    } finally {
+      setLocating(false);
+    }
   }
 
   async function handleSave() {
