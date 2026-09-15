@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
+import SportLoader from '../components/SportLoader';
 import { useAuth } from '../context/AuthProvider';
 import { colors } from '../lib/theme';
 import { iconForNotif, textForNotif, targetForNotif } from '../lib/notifications';
@@ -55,7 +56,7 @@ export default function NotificationsScreen({ navigation }) {
   return (
     <View style={styles.screen}>
       {loading ? (
-        <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
+        <View style={styles.center}><SportLoader /></View>
       ) : (
         <FlatList
           data={items}
