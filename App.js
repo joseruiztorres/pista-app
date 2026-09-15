@@ -30,6 +30,9 @@ import CreatePlaceScreen from './src/screens/CreatePlaceScreen';
 import PlaceDetailScreen from './src/screens/PlaceDetailScreen';
 import SearchScreen from './src/screens/SearchScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
+import EditPostScreen from './src/screens/EditPostScreen';
+import FollowRequestsScreen from './src/screens/FollowRequestsScreen';
+import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 import { registerForPushNotificationsAsync } from './src/lib/pushNotifications';
 
 const Stack = createNativeStackNavigator();
@@ -63,7 +66,7 @@ function Tabs() {
 }
 
 function RootNavigator() {
-  const { session, profile, loading } = useAuth();
+  const { session, profile, loading, passwordRecovery } = useAuth();
 
   useEffect(() => {
     if (Platform.OS !== 'web' && session?.user?.id && profile?.onboarded) {
@@ -76,6 +79,17 @@ function RootNavigator() {
       <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={colors.accent} />
       </View>
+    );
+  }
+
+  // Tiene prioridad sobre cualquier otro estado: si Supabase acaba de abrir
+  // una sesión de recuperación (enlace de "olvidé mi contraseña"), primero
+  // hay que dejar que elija una contraseña nueva.
+  if (passwordRecovery) {
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+      </Stack.Navigator>
     );
   }
 
@@ -100,6 +114,8 @@ function RootNavigator() {
           <Stack.Screen name="PlaceDetail" component={PlaceDetailScreen} options={{ headerShown: true, title: 'Sitio' }} />
           <Stack.Screen name="Search" component={SearchScreen} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ presentation: 'modal', headerShown: true, title: 'Editar perfil' }} />
+          <Stack.Screen name="EditPost" component={EditPostScreen} options={{ presentation: 'modal', headerShown: true, title: 'Editar publicación' }} />
+          <Stack.Screen name="FollowRequests" component={FollowRequestsScreen} options={{ headerShown: true, title: 'Solicitudes de seguimiento' }} />
         </>
       )}
     </Stack.Navigator>
