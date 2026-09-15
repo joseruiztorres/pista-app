@@ -11,17 +11,20 @@ export default function ProfileScreen({ navigation }) {
   const { profile, user, signOut } = useAuth();
   const [badges, setBadges] = useState([]);
   const [counts, setCounts] = useState({ followers: 0, following: 0, posts: 0 });
+  const [pendingRequests, setPendingRequests] = useState(0);
 
   const load = useCallback(async () => {
     if (!user) return;
-    const [{ data: badgeRows }, followersRes, followingRes, postsRes] = await Promise.all([
+    const [{ data: badgeRows }, followersRes, followingRes, postsRes, requestsRes] = await Promise.all([
       supabase.from('profile_badges').select('badge_id, badges(*)').eq('profile_id', user.id),
-      supabase.from('follows').select('follower_id', { count: 'exact', head: true }).eq('following_id', user.id),
-      supabase.from('follows').select('following_id', { count: 'exact', head: true }).eq('follower_id', user.id),
+      supabase.from('follows').select('follower_id', { count: 'exact', head: true }).eq('following_id', user.id).eq('pending', false),
+      supabase.from('follows').select('following_id', { count: 'exact', head: true }).eq('follower_id', user.id).eq('pending', false),
       supabase.from('posts').select('id', { count: 'exact', head: true }).eq('author_id', user.id),
+      supabase.from('follows').select('follower_id', { count: 'exact', head: true }).eq('following_id', user.id).eq('pending', true),
     ]);
     setBadges((badgeRows || []).map((b) => b.badges).filter(Boolean));
     setCounts({ followers: followersRes.count || 0, following: followingRes.count || 0, posts: postsRes.count || 0 });
+    setPendingRequests(requestsRes.count || 0);
   }, [user]);
 
   useEffect(() => { load(); }, [load]);
@@ -33,10 +36,18 @@ export default function ProfileScreen({ navigation }) {
       <Text style={styles.handle}>@{profile?.username}</Text>
       {!!profile?.bio && <Text style={styles.bio}>{profile.bio}</Text>}
 
-      <Pressable style={styles.editBtn} onPress={() => navigation.navigate('EditProfile')}>
-        <Ionicons name="create-outline" size={14} color={colors.accentStrong} />
-        <Text style={styles.editBtnText}>Editar perfil</Text>
-      </Pressable>
+      <View style={styles.editRow}>
+        <Pressable style={styles.editBtn} onPress={() => navigation.navigate('EditProfile')}>
+          <Ionicons name="create-outline" size={14} color={colors.accentStrong} />
+          <Text style={styles.editBtnText}>Editar perfil</Text>
+        </Pressable>
+        {profile?.is_private && (
+          <Pressable style={styles.editBtn} onPress={() => navigation.navigate('FollowRequests')}>
+            <Ionicons name="person-add-outline" size={14} color={colors.accentStrong} />
+            <Text style={styles.editBtnText}>Solicitudes{pendingRequests > 0 ? ` (${pendingRequests})` : ''}</Text>
+          </Pressable>
+        )}
+      </View>
 
       <View style={styles.statsRow}>
         <View style={styles.stat}><Text style={styles.statValue}>{counts.followers}</Text><Text style={styles.statLabel}>Seguidores</Text></View>
@@ -68,7 +79,8 @@ const styles = StyleSheet.create({
   name: { color: colors.text, fontSize: 18, fontWeight: '700', marginTop: 8 },
   handle: { color: colors.textDim, fontSize: 13 },
   bio: { color: colors.text, fontSize: 13, textAlign: 'center', paddingHorizontal: 32, marginTop: 6 },
-  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
+  editRow: { flexDirection: 'row', gap: 16, marginTop: 12 },
+  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   editBtnText: { color: colors.accentStrong, fontSize: 13, fontWeight: '700' },
   statsRow: { flexDirection: 'row', gap: 24, marginTop: 16 },
   stat: { alignItems: 'center' },
