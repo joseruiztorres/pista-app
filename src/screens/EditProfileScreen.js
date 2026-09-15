@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, Switch } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
@@ -13,6 +13,7 @@ export default function EditProfileScreen({ navigation }) {
   const [username, setUsername] = useState(profile?.username || '');
   const [bio, setBio] = useState(profile?.bio || '');
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || null);
+  const [isPrivate, setIsPrivate] = useState(!!profile?.is_private);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -52,6 +53,7 @@ export default function EditProfileScreen({ navigation }) {
         username: username.trim().toLowerCase().replace(/[^a-z0-9_]/g, ''),
         bio: bio.trim() || null,
         avatar_url: avatarUrl ? avatarUrl.split('?')[0] : null,
+        is_private: isPrivate,
       }).eq('id', user.id);
       if (error) throw error;
       await refreshProfile();
@@ -90,6 +92,19 @@ export default function EditProfileScreen({ navigation }) {
           value={bio} onChangeText={setBio} multiline />
       </Field>
 
+      <View style={styles.privacyRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.label}>Cuenta privada</Text>
+          <Text style={styles.privacyHint}>Solo quien apruebes podrá ver tus publicaciones.</Text>
+        </View>
+        <Switch
+          value={isPrivate}
+          onValueChange={setIsPrivate}
+          trackColor={{ true: colors.accent, false: colors.surface2 }}
+          thumbColor={colors.bg}
+        />
+      </View>
+
       <Pressable style={styles.btnPrimary} onPress={handleSave} disabled={saving || uploadingAvatar}>
         <Text style={styles.btnPrimaryText}>{saving ? 'Guardando…' : 'Guardar cambios'}</Text>
       </Pressable>
@@ -119,6 +134,8 @@ const styles = StyleSheet.create({
     borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14,
   },
   textarea: { minHeight: 80, textAlignVertical: 'top' },
+  privacyRow: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, borderRadius: 12, padding: 12 },
+  privacyHint: { color: colors.textDim, fontSize: 11, marginTop: 3 },
   usernameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   at: { color: colors.textDim, fontSize: 14, fontWeight: '700' },
   btnPrimary: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 8, marginBottom: 32 },
