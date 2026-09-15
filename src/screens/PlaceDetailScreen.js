@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
+import SportLoader from '../components/SportLoader';
 import { iconFor } from '../lib/sports';
 import { colors } from '../lib/theme';
 
@@ -27,7 +28,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
   useEffect(() => { load(); }, [load]);
 
   if (loading || !place) {
-    return <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>;
+    return <View style={styles.center}><SportLoader /></View>;
   }
 
   const ratings = reviews.map((r) => Number(r.details?.rating)).filter(Boolean);
