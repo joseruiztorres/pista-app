@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
-import { getCurrentCoordinates } from '../lib/location';
+import { geocodeLocation, getCurrentCoordinates } from '../lib/location';
+import GoogleMapCard from '../components/GoogleMapCard';
 import { colors } from '../lib/theme';
 
 function todayPlus(days) {
@@ -25,6 +26,7 @@ export default function CreateMeetupScreen({ navigation }) {
   const [date, setDate] = useState(todayPlus(1));
   const [time, setTime] = useState('18:00');
   const [locating, setLocating] = useState(false);
+  const [searchingMap, setSearchingMap] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -46,6 +48,20 @@ export default function CreateMeetupScreen({ navigation }) {
       Alert.alert('No se pudo usar tu ubicación', 'Puedes escribir el nombre del lugar sin añadir un punto al mapa.');
     } finally {
       setLocating(false);
+    }
+  }
+
+  async function findOnMap() {
+    if (!locationName.trim() || searchingMap) return;
+    setSearchingMap(true);
+    try {
+      const coords = await geocodeLocation(locationName);
+      setLat(String(coords.lat));
+      setLng(String(coords.lng));
+    } catch (_error) {
+      Alert.alert('No encontramos el lugar', 'Prueba a añadir la ciudad o una dirección más completa.');
+    } finally {
+      setSearchingMap(false);
     }
   }
 
@@ -114,7 +130,15 @@ export default function CreateMeetupScreen({ navigation }) {
 
       <Field label="Lugar">
         <TextInput style={styles.input} placeholder="Ej. Parc de la Ciutadella, entrada Wellington" placeholderTextColor={colors.textDim}
-          value={locationName} onChangeText={setLocationName} />
+          value={locationName} onChangeText={(value) => { setLocationName(value); setLat(''); setLng(''); }}
+          onSubmitEditing={findOnMap} />
+
+        {!!locationName.trim() && !lat && !lng && (
+          <Pressable style={styles.previewBtn} onPress={findOnMap} disabled={searchingMap}>
+            <Ionicons name="map-outline" size={17} color={colors.accentStrong} />
+            <Text style={styles.previewBtnText}>{searchingMap ? 'Buscando lugar…' : 'Ver este lugar en el mapa'}</Text>
+          </Pressable>
+        )}
 
         {lat && lng ? (
           <View style={styles.locatedRow}>
@@ -130,7 +154,16 @@ export default function CreateMeetupScreen({ navigation }) {
             <Text style={styles.secondaryBtnText}>{locating ? 'Localizando…' : 'Usar mi ubicación actual (si estás ahí ahora)'}</Text>
           </Pressable>
         )}
-        <Text style={styles.hint}>Esto añade la quedada al mapa. Con el nombre del lugar ya basta para que la gente sepa dónde es.</Text>
+        <Text style={styles.hint}>Escribe el lugar y comprueba el punto en el mapa, o usa tu ubicación si ya estás allí.</Text>
+
+        {lat && lng ? (
+          <GoogleMapCard
+            query={locationName}
+            latitude={lat}
+            longitude={lng}
+            label={locationName.trim() || 'esta quedada'}
+          />
+        ) : null}
       </Field>
 
       <Field label="Descripción (opcional)">
@@ -176,6 +209,8 @@ const styles = StyleSheet.create({
   chipText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },
   secondaryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 4 },
   secondaryBtnText: { color: colors.accentStrong, fontSize: 13, fontWeight: '600' },
+  previewBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, alignSelf: 'flex-start', paddingVertical: 2 },
+  previewBtnText: { color: colors.accentStrong, fontSize: 13, fontWeight: '700' },
   locatedRow: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, alignSelf: 'flex-start' },
   locatedText: { color: colors.text, fontSize: 12, fontWeight: '600', flex: 1 },
   locatedRemove: { color: colors.clay, fontSize: 12, fontWeight: '700' },

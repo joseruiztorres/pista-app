@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, Linking } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import SportLoader from '../components/SportLoader';
 import { iconFor } from '../lib/sports';
 import { colors } from '../lib/theme';
+import GoogleMapCard from '../components/GoogleMapCard';
 
 const REVIEW_SELECT = '*, profiles:author_id(username, display_name)';
 
@@ -34,13 +35,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
   const ratings = reviews.map((r) => Number(r.details?.rating)).filter(Boolean);
   const avg = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
 
-  function openMap() {
-    const url = place.lat && place.lng
-      ? `https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`
-      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address || place.name)}`;
-    Linking.openURL(url);
-  }
-
   return (
     <FlatList
       style={styles.screen}
@@ -65,13 +59,14 @@ export default function PlaceDetailScreen({ route, navigation }) {
             ) : (
               <Text style={styles.noReviews}>Todavía no tiene reseñas</Text>
             )}
-            {(place.lat && place.lng) || place.address ? (
-              <Pressable style={styles.mapBtn} onPress={openMap}>
-                <Ionicons name="map-outline" size={14} color={colors.accentStrong} />
-                <Text style={styles.mapBtnText}>Ver en el mapa</Text>
-              </Pressable>
-            ) : null}
           </View>
+
+          <GoogleMapCard
+            query={place.address || place.name}
+            latitude={place.lat}
+            longitude={place.lng}
+            label={place.address || place.name}
+          />
 
           <Pressable style={styles.reviewBtn} onPress={() => navigation.navigate('CrearPost', { presetType: 'resena', presetPlace: place })}>
             <Ionicons name="create-outline" size={16} color={colors.bg} />
@@ -109,8 +104,6 @@ const styles = StyleSheet.create({
   starsRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   avgText: { color: colors.textDim, fontSize: 12, marginLeft: 4 },
   noReviews: { color: colors.textDim, fontSize: 12, marginTop: 4 },
-  mapBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
-  mapBtnText: { color: colors.accentStrong, fontSize: 12, fontWeight: '700' },
   reviewBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 12 },
   reviewBtnText: { color: colors.bg, fontSize: 14, fontWeight: '700' },
   sectionTitle: { color: colors.textDim, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },

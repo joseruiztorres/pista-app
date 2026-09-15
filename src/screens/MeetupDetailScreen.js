@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, Linking, Alert } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
 import { colors } from '../lib/theme';
+import GoogleMapCard from '../components/GoogleMapCard';
 
 function formatWhen(iso) {
   const d = new Date(iso);
@@ -63,14 +64,6 @@ export default function MeetupDetailScreen({ route, navigation }) {
     ]);
   }
 
-  function openInMaps() {
-    if (!meetup) return;
-    const url = meetup.lat && meetup.lng
-      ? `https://www.google.com/maps/search/?api=1&query=${meetup.lat},${meetup.lng}`
-      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(meetup.location_name)}`;
-    Linking.openURL(url);
-  }
-
   if (!meetup) return <View style={styles.screen} />;
 
   const isOrganizer = meetup.organizer_id === user?.id;
@@ -90,11 +83,17 @@ export default function MeetupDetailScreen({ route, navigation }) {
           <Text style={styles.title}>{meetup.title}</Text>
           {!!meetup.description && <Text style={styles.description}>{meetup.description}</Text>}
 
-          <Pressable style={styles.locationCard} onPress={openInMaps}>
+          <View style={styles.locationCard}>
             <Ionicons name="location-outline" size={18} color={colors.textDim} />
             <Text style={styles.locationText}>{meetup.location_name}</Text>
-            <Ionicons name="open-outline" size={16} color={colors.accentStrong} />
-          </Pressable>
+          </View>
+
+          <GoogleMapCard
+            query={meetup.location_name}
+            latitude={meetup.lat}
+            longitude={meetup.lng}
+            label={meetup.location_name}
+          />
 
           <Text style={styles.organizer}>Organiza {meetup.profiles?.display_name || meetup.profiles?.username}</Text>
 
