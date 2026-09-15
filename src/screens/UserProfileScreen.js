@@ -20,21 +20,34 @@ export default function UserProfileScreen({ route, navigation }) {
   const [likedIds, setLikedIds] = useState({});
   const [badges, setBadges] = useState([]);
   const [counts, setCounts] = useState({ followers: 0, following: 0 });
+  const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [{ data: profileRow }, { data: postsRows }, { data: badgeRows }, followersRes, followingRes] = await Promise.all([
+    const [{ data: profileRow }, { data: badgeRows }, followersRes, followingRes] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', profileId).maybeSingle(),
-      supabase.from('posts').select(POST_SELECT).eq('author_id', profileId).order('created_at', { ascending: false }),
       supabase.from('profile_badges').select('badge_id, badges(*)').eq('profile_id', profileId),
-      supabase.from('follows').select('follower_id', { count: 'exact', head: true }).eq('following_id', profileId),
-      supabase.from('follows').select('following_id', { count: 'exact', head: true }).eq('follower_id', profileId),
+      supabase.from('follows').select('follower_id', { count: 'exact', head: true }).eq('following_id', profileId).eq('pending', false),
+      supabase.from('follows').select('following_id', { count: 'exact', head: true }).eq('follower_id', profileId).eq('pending', false),
     ]);
     setProfile(profileRow || null);
-    setPosts(postsRows || []);
     setBadges((badgeRows || []).map((b) => b.badges).filter(Boolean));
     setCounts({ followers: followersRes.count || 0, following: followingRes.count || 0 });
+
+    let following = false;
+    if (user) {
+      const { data: followRow } = await supabase.from('follows').select('pending')
+        .eq('follower_id', user.id).eq('following_id', profileId).eq('pending', false).maybeSingle();
+      following = !!followRow;
+      setIsFollowing(following);
+    }
+
+    // RLS ya oculta las publicaciones si el perfil es privado y no le sigues,
+    // o si hay un bloqueo de por medio — no hace falta comprobarlo aquí también.
+    const { data: postsRows } = await supabase.from('posts').select(POST_SELECT)
+      .eq('author_id', profileId).order('created_at', { ascending: false });
+    setPosts(postsRows || []);
 
     if (user) {
       const { data: likes } = await supabase.from('likes').select('post_id').eq('profile_id', user.id);
@@ -70,26 +83,41 @@ export default function UserProfileScreen({ route, navigation }) {
     return <View style={styles.center}><Text style={{ color: colors.textDim }}>No se encontró este perfil.</Text></View>;
   }
 
+  const isMine = user?.id === profile.id;
+  const showPrivateGate = profile.is_private && !isMine && !isFollowing;
+
   return (
     <FlatList
       style={styles.screen}
-      data={posts}
+      data={showPrivateGate ? [] : posts}
       keyExtractor={(item) => item.id}
       contentContainerStyle={{ padding: 16, gap: 14 }}
       ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
-      ListEmptyComponent={<Text style={styles.empty}>Todavía no ha publicado nada.</Text>}
+      ListEmptyComponent={
+        showPrivateGate ? (
+          <View style={styles.privateGate}>
+            <Ionicons name="lock-closed-outline" size={22} color={colors.textDim} />
+            <Text style={styles.empty}>Esta cuenta es privada. Síguela para ver sus publicaciones.</Text>
+          </View>
+        ) : <Text style={styles.empty}>Todavía no ha publicado nada.</Text>
+      }
       renderItem={({ item }) => (
         <PostCard
           post={item}
           liked={!!likedIds[item.id]}
           onToggleLike={() => toggleLike(item)}
           onPressComments={(postId) => navigation.navigate('PostDetail', { postId })}
+          onEdit={(post) => navigation.navigate('EditPost', { post })}
+          onChanged={load}
         />
       )}
       ListHeaderComponent={
         <View style={styles.header}>
           <Avatar url={profile.avatar_url} name={profile.display_name || profile.username} size={72} />
-          <Text style={styles.name}>{profile.display_name || profile.username}</Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>{profile.display_name || profile.username}</Text>
+            {profile.is_private && <Ionicons name="lock-closed" size={13} color={colors.textDim} />}
+          </View>
           <Text style={styles.handle}>@{profile.username}</Text>
           {!!profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
 
@@ -100,7 +128,7 @@ export default function UserProfileScreen({ route, navigation }) {
           </View>
 
           <View style={styles.actionsRow}>
-            <FollowButton profileId={profile.id} />
+            <FollowButton profileId={profile.id} isPrivate={profile.is_private} />
             <MessageButton profileId={profile.id} profileName={profile.display_name || profile.username} />
           </View>
 
@@ -124,8 +152,10 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   empty: { color: colors.textDim, textAlign: 'center', marginTop: 20 },
+  privateGate: { alignItems: 'center', gap: 10, marginTop: 30, paddingHorizontal: 24 },
   header: { alignItems: 'center', gap: 6, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: colors.line, marginBottom: 4 },
-  name: { color: colors.text, fontSize: 18, fontWeight: '700', marginTop: 4 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  name: { color: colors.text, fontSize: 18, fontWeight: '700' },
   handle: { color: colors.textDim, fontSize: 13 },
   bio: { color: colors.text, fontSize: 13, textAlign: 'center', paddingHorizontal: 24, marginTop: 6 },
   statsRow: { flexDirection: 'row', gap: 24, marginTop: 12, marginBottom: 4 },
