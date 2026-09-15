@@ -47,6 +47,12 @@ export default function ProfileScreen({ navigation }) {
             <Text style={styles.editBtnText}>Solicitudes{pendingRequests > 0 ? ` (${pendingRequests})` : ''}</Text>
           </Pressable>
         )}
+        {profile?.is_admin && (
+          <Pressable style={styles.editBtn} onPress={() => navigation.navigate('AdminReports')}>
+            <Ionicons name="shield-checkmark-outline" size={14} color={colors.accentStrong} />
+            <Text style={styles.editBtnText}>Reportes</Text>
+          </Pressable>
+        )}
       </View>
 
       <View style={styles.statsRow}>
