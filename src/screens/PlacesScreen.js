@@ -53,7 +53,7 @@ export default function PlacesScreen({ navigation }) {
   return (
     <View style={styles.screen}>
       <View style={styles.topbar}>
-        <Text style={styles.h1}>Lugares</Text>
+        <Text style={styles.hint}>Gimnasios, parques y rutas que la comunidad ha añadido.</Text>
         <Pressable style={styles.fab} onPress={() => navigation.navigate('CreatePlace')}>
           <Ionicons name="add" size={22} color={colors.bg} />
         </Pressable>
@@ -108,8 +108,8 @@ export default function PlacesScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  topbar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 56, paddingBottom: 10 },
-  h1: { color: colors.text, fontSize: 20, fontWeight: '800' },
+  topbar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10 },
+  hint: { flex: 1, color: colors.textDim, fontSize: 12, lineHeight: 17 },
   fab: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginBottom: 8,
