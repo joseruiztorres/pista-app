@@ -33,6 +33,7 @@ import EditProfileScreen from './src/screens/EditProfileScreen';
 import EditPostScreen from './src/screens/EditPostScreen';
 import FollowRequestsScreen from './src/screens/FollowRequestsScreen';
 import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
+import AdminReportsScreen from './src/screens/AdminReportsScreen';
 import { registerForPushNotificationsAsync } from './src/lib/pushNotifications';
 
 const Stack = createNativeStackNavigator();
@@ -116,6 +117,7 @@ function RootNavigator() {
           <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ presentation: 'modal', headerShown: true, title: 'Editar perfil' }} />
           <Stack.Screen name="EditPost" component={EditPostScreen} options={{ presentation: 'modal', headerShown: true, title: 'Editar publicación' }} />
           <Stack.Screen name="FollowRequests" component={FollowRequestsScreen} options={{ headerShown: true, title: 'Solicitudes de seguimiento' }} />
+          <Stack.Screen name="AdminReports" component={AdminReportsScreen} options={{ headerShown: true, title: 'Reportes' }} />
         </>
       )}
     </Stack.Navigator>
