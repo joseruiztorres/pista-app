@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
+import SportLoader from '../components/SportLoader';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
 import { colors } from '../lib/theme';
@@ -38,7 +39,7 @@ export default function OnboardingSportsScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={colors.accent} />
+        <SportLoader />
       </View>
     );
   }
