@@ -16,6 +16,13 @@
     "android": {
       "package": "com.pista.app"
     },
-    "plugins": []
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Pista usa tu ubicación solo cuando pulsas «Usar mi ubicación» para añadir un punto al mapa."
+        }
+      ]
+    ]
   }
 }
