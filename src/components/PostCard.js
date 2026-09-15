@@ -1,16 +1,68 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet, Pressable, Modal, ScrollView, Alert, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../lib/theme';
 import { iconFor } from '../lib/sports';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthProvider';
 import RoutePreview from './RoutePreview';
 
 const TYPE_LABEL = { ruta: 'Ruta', progreso: 'Progreso', comida: 'Comida', tip: 'Tip', resena: 'Reseña' };
+const REPORT_REASONS = [
+  { id: 'spam', label: 'Spam o publicidad' },
+  { id: 'inapropiado', label: 'Contenido inapropiado' },
+  { id: 'acoso', label: 'Acoso o discurso de odio' },
+  { id: 'otro', label: 'Otro motivo' },
+];
 
-export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onPressComments }) {
+export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onPressComments, onEdit, onChanged }) {
+  const { user } = useAuth();
   const author = post.profiles || {};
   const details = post.details || {};
   const commentCount = post.comments?.[0]?.count ?? 0;
+  const isMine = user && user.id === post.author_id;
+  const photos = (post.post_media || []).slice().sort((a, b) => (a.position || 0) - (b.position || 0));
+
+  const [stage, setStage] = useState(null); // null | 'main' | 'confirmDelete' | 'confirmBlock' | 'report'
+  const [busy, setBusy] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  function closeMenu() { setStage(null); }
+
+  async function handleDelete() {
+    setBusy(true);
+    const { error } = await supabase.from('posts').delete().eq('id', post.id).eq('author_id', user.id);
+    setBusy(false);
+    closeMenu();
+    if (error) { Alert.alert('No se pudo eliminar', error.message); return; }
+    onChanged?.();
+  }
+
+  async function handleBlock() {
+    setBusy(true);
+    const { error } = await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: post.author_id });
+    setBusy(false);
+    closeMenu();
+    if (error) { Alert.alert('No se pudo bloquear', error.message); return; }
+    onChanged?.();
+  }
+
+  async function handleReport(reasonId) {
+    setBusy(true);
+    const { error } = await supabase.from('reports').insert({
+      reporter_id: user.id, target_type: 'post', target_id: post.id, reason: reasonId,
+    });
+    setBusy(false);
+    closeMenu();
+    if (error) { Alert.alert('No se pudo enviar el reporte', error.message); return; }
+    Alert.alert('Gracias', 'Hemos recibido tu reporte.');
+  }
+
+  function onPhotoScroll(e) {
+    const w = Dimensions.get('window').width;
+    const idx = Math.round(e.nativeEvent.contentOffset.x / Math.max(w - 60, 1));
+    setPhotoIndex(idx);
+  }
 
   return (
     <View style={styles.card}>
@@ -28,11 +80,17 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
             </View>
             <Text style={styles.meta}>
               @{author.username} · {new Date(post.created_at).toLocaleDateString('es-ES')}
+              {post.edited_at ? ' · editado' : ''}
               {post.location ? ` · ${post.location}` : ''}
             </Text>
           </View>
         </Pressable>
-        {post.sport_id && <Ionicons name={iconFor(post.sport_id)} size={18} color={colors.textDim} />}
+        {post.sport_id && <Ionicons name={iconFor(post.sport_id)} size={18} color={colors.textDim} style={{ marginRight: 4 }} />}
+        {user && (
+          <Pressable hitSlop={8} onPress={() => setStage('main')}>
+            <Ionicons name="ellipsis-horizontal" size={18} color={colors.textDim} />
+          </Pressable>
+        )}
       </View>
 
       {post.type === 'ruta' && details.route && (
@@ -64,8 +122,20 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
         </View>
       )}
 
-      {post.post_media && post.post_media[0] && (
-        <Image source={{ uri: post.post_media[0].url }} style={styles.image} />
+      {photos.length > 1 && (
+        <View>
+          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onPhotoScroll}>
+            {photos.map((p, i) => (
+              <Image key={i} source={{ uri: p.url }} style={styles.imageCarousel} />
+            ))}
+          </ScrollView>
+          <View style={styles.photoCounter}>
+            <Text style={styles.photoCounterText}>{photoIndex + 1}/{photos.length}</Text>
+          </View>
+        </View>
+      )}
+      {photos.length === 1 && (
+        <Image source={{ uri: photos[0].url }} style={styles.image} />
       )}
 
       {!!post.caption && <Text style={styles.caption}>{post.caption}</Text>}
@@ -80,7 +150,60 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
           <Text style={styles.actionText}>{commentCount}</Text>
         </Pressable>
       </View>
+
+      <Modal visible={!!stage} transparent animationType="fade" onRequestClose={closeMenu}>
+        <Pressable style={styles.backdrop} onPress={closeMenu}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            {stage === 'main' && isMine && (
+              <>
+                <MenuItem icon="create-outline" label="Editar" onPress={() => { closeMenu(); onEdit?.(post); }} />
+                <MenuItem icon="trash-outline" label="Eliminar" destructive onPress={() => setStage('confirmDelete')} />
+                <MenuItem icon="close" label="Cancelar" onPress={closeMenu} />
+              </>
+            )}
+            {stage === 'main' && !isMine && (
+              <>
+                <MenuItem icon="flag-outline" label="Reportar publicación" onPress={() => setStage('report')} />
+                <MenuItem icon="ban-outline" label={`Bloquear a @${author.username}`} destructive onPress={() => setStage('confirmBlock')} />
+                <MenuItem icon="close" label="Cancelar" onPress={closeMenu} />
+              </>
+            )}
+            {stage === 'confirmDelete' && (
+              <>
+                <Text style={styles.confirmText}>¿Eliminar esta publicación? No se puede deshacer.</Text>
+                <MenuItem icon="trash-outline" label={busy ? 'Eliminando…' : 'Sí, eliminar'} destructive onPress={handleDelete} disabled={busy} />
+                <MenuItem icon="close" label="Cancelar" onPress={closeMenu} />
+              </>
+            )}
+            {stage === 'confirmBlock' && (
+              <>
+                <Text style={styles.confirmText}>¿Bloquear a @{author.username}? Ya no verás sus publicaciones ni él las tuyas.</Text>
+                <MenuItem icon="ban-outline" label={busy ? 'Bloqueando…' : 'Sí, bloquear'} destructive onPress={handleBlock} disabled={busy} />
+                <MenuItem icon="close" label="Cancelar" onPress={closeMenu} />
+              </>
+            )}
+            {stage === 'report' && (
+              <>
+                <Text style={styles.confirmText}>¿Por qué reportas esta publicación?</Text>
+                {REPORT_REASONS.map((r) => (
+                  <MenuItem key={r.id} icon="flag-outline" label={r.label} onPress={() => handleReport(r.id)} disabled={busy} />
+                ))}
+                <MenuItem icon="close" label="Cancelar" onPress={closeMenu} />
+              </>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
+  );
+}
+
+function MenuItem({ icon, label, onPress, destructive, disabled }) {
+  return (
+    <Pressable style={styles.menuItem} onPress={onPress} disabled={disabled}>
+      <Ionicons name={icon} size={18} color={destructive ? colors.clay : colors.text} />
+      <Text style={[styles.menuItemText, destructive && { color: colors.clay }]}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -113,8 +236,16 @@ const styles = StyleSheet.create({
   statLabel: { color: colors.textDim, fontSize: 10 },
   statValue: { color: colors.text, fontSize: 14, fontWeight: '700' },
   image: { width: '100%', aspectRatio: 16 / 10, borderRadius: 14, backgroundColor: colors.surface2 },
+  imageCarousel: { width: Dimensions.get('window').width - 60, aspectRatio: 16 / 10, borderRadius: 14, backgroundColor: colors.surface2, marginRight: 0 },
+  photoCounter: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
+  photoCounterText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   caption: { color: colors.text, fontSize: 14, lineHeight: 20 },
   actions: { flexDirection: 'row', gap: 20 },
   action: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   actionText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 10, paddingBottom: 28, gap: 2 },
+  confirmText: { color: colors.text, fontSize: 13, lineHeight: 19, padding: 12 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 12, borderRadius: 12 },
+  menuItemText: { color: colors.text, fontSize: 14, fontWeight: '600' },
 });
