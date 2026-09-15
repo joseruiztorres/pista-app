@@ -2,14 +2,34 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { colors } from '../lib/theme';
+// (Platform ya se importa arriba; se usa en handleReset para el redirectTo en web)
 
 export default function LoginScreen() {
-  const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
+  const [mode, setMode] = useState('signin'); // 'signin' | 'signup' | 'reset'
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+
+  async function handleReset() {
+    if (!email) {
+      setMessage('Escribe tu email.');
+      return;
+    }
+    setMessage('');
+    setBusy(true);
+    try {
+      const redirectTo = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.origin : undefined;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) throw error;
+      setMessage('Te hemos enviado un enlace a tu correo para restablecer la contraseña.');
+    } catch (err) {
+      setMessage(err.message || 'No se pudo enviar el enlace.');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function handleSubmit() {
     if (!email || !password) {
@@ -59,25 +79,40 @@ export default function LoginScreen() {
             placeholder="tu@email.com" placeholderTextColor={colors.textDim}
             autoCapitalize="none" keyboardType="email-address" />
         </View>
-        <View style={styles.field}>
-          <Text style={styles.label}>Contraseña</Text>
-          <TextInput style={styles.input} value={password} onChangeText={setPassword}
-            placeholder="••••••••" placeholderTextColor={colors.textDim} secureTextEntry />
-        </View>
 
-        <Pressable style={styles.btnPrimary} onPress={handleSubmit} disabled={busy}>
+        {mode !== 'reset' && (
+          <View style={styles.field}>
+            <Text style={styles.label}>Contraseña</Text>
+            <TextInput style={styles.input} value={password} onChangeText={setPassword}
+              placeholder="••••••••" placeholderTextColor={colors.textDim} secureTextEntry />
+          </View>
+        )}
+
+        {mode === 'signin' && (
+          <Pressable onPress={() => { setMessage(''); setMode('reset'); }}>
+            <Text style={styles.forgot}>¿Olvidaste tu contraseña?</Text>
+          </Pressable>
+        )}
+
+        <Pressable style={styles.btnPrimary} onPress={mode === 'reset' ? handleReset : handleSubmit} disabled={busy}>
           <Text style={styles.btnPrimaryText}>
-            {busy ? 'Un momento…' : mode === 'signup' ? 'Crear cuenta' : 'Entrar'}
+            {busy ? 'Un momento…' : mode === 'signup' ? 'Crear cuenta' : mode === 'reset' ? 'Enviar enlace' : 'Entrar'}
           </Text>
         </Pressable>
 
         {!!message && <Text accessibilityRole="alert" style={styles.message}>{message}</Text>}
 
-        <Pressable onPress={() => setMode(mode === 'signup' ? 'signin' : 'signup')}>
-          <Text style={styles.switch}>
-            {mode === 'signup' ? '¿Ya tienes cuenta? Entra' : '¿Nuevo en Pista? Crea una cuenta'}
-          </Text>
-        </Pressable>
+        {mode === 'reset' ? (
+          <Pressable onPress={() => { setMessage(''); setMode('signin'); }}>
+            <Text style={styles.switch}>Volver a entrar</Text>
+          </Pressable>
+        ) : (
+          <Pressable onPress={() => { setMessage(''); setMode(mode === 'signup' ? 'signin' : 'signup'); }}>
+            <Text style={styles.switch}>
+              {mode === 'signup' ? '¿Ya tienes cuenta? Entra' : '¿Nuevo en Pista? Crea una cuenta'}
+            </Text>
+          </Pressable>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -97,6 +132,7 @@ const styles = StyleSheet.create({
   },
   btnPrimary: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
   btnPrimaryText: { color: '#06110B', fontSize: 16, fontWeight: '700' },
+  forgot: { color: colors.accentStrong, fontSize: 12, fontWeight: '600', textAlign: 'right', marginTop: -6 },
   switch: { color: colors.textDim, textAlign: 'center', marginTop: 4, fontSize: 13 },
   message: { color: colors.text, textAlign: 'center', fontSize: 13, lineHeight: 19 },
 });
