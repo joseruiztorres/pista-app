@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, RefreshControl, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, RefreshControl, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
 import PostCard from '../components/PostCard';
 import DailyChallengeCard from '../components/DailyChallengeCard';
+import SportLoader from '../components/SportLoader';
 import { colors } from '../lib/theme';
 
 const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position), comments(count), place:place_id(name)';
@@ -162,7 +163,7 @@ export default function FeedScreen({ navigation }) {
         ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
         onEndReachedThreshold={0.4}
         onEndReached={loadMore}
-        ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.accent} style={{ marginTop: 14 }} /> : null}
+        ListFooterComponent={loadingMore ? <SportLoader size={20} label={null} style={{ marginTop: 14 }} /> : null}
         ListEmptyComponent={<Text style={styles.empty}>
           {filter === 'siguiendo' ? 'Todavía no sigues a nadie con publicaciones.' : 'Todavía no hay publicaciones. ¡Sé el primero!'}
         </Text>}
