@@ -4,43 +4,51 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { colors } from '../lib/theme';
 
-export default function FollowButton({ profileId }) {
+// state: null (cargando/no aplica) | 'none' | 'pending' | 'following'
+export default function FollowButton({ profileId, isPrivate }) {
   const { user } = useAuth();
-  const [following, setFollowing] = useState(null); // null = cargando o no aplica
+  const [state, setState] = useState(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     let active = true;
     if (!user || !profileId || user.id === profileId) {
-      setFollowing(null);
+      setState(null);
       return;
     }
-    supabase.from('follows').select('follower_id')
+    supabase.from('follows').select('pending')
       .eq('follower_id', user.id).eq('following_id', profileId).maybeSingle()
-      .then(({ data }) => { if (active) setFollowing(!!data); });
+      .then(({ data }) => {
+        if (!active) return;
+        if (!data) setState('none');
+        else setState(data.pending ? 'pending' : 'following');
+      });
     return () => { active = false; };
   }, [user, profileId]);
 
-  if (!user || !profileId || user.id === profileId || following === null) return null;
+  if (!user || !profileId || user.id === profileId || state === null) return null;
 
   async function toggle() {
     setBusy(true);
-    if (following) {
+    if (state === 'following' || state === 'pending') {
       await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', profileId);
-      setFollowing(false);
+      setState('none');
     } else {
-      await supabase.from('follows').insert({ follower_id: user.id, following_id: profileId });
-      setFollowing(true);
+      await supabase.from('follows').insert({ follower_id: user.id, following_id: profileId, pending: !!isPrivate });
+      setState(isPrivate ? 'pending' : 'following');
     }
     setBusy(false);
   }
 
+  const label = state === 'following' ? 'Siguiendo' : state === 'pending' ? 'Solicitado' : 'Seguir';
+  const active = state === 'following' || state === 'pending';
+
   return (
-    <Pressable style={[styles.btn, following && styles.btnActive]} onPress={toggle} disabled={busy}>
+    <Pressable style={[styles.btn, active && styles.btnActive]} onPress={toggle} disabled={busy}>
       {busy ? (
-        <ActivityIndicator size="small" color={following ? colors.text : colors.bg} />
+        <ActivityIndicator size="small" color={active ? colors.text : colors.bg} />
       ) : (
-        <Text style={[styles.text, following && styles.textActive]}>{following ? 'Siguiendo' : 'Seguir'}</Text>
+        <Text style={[styles.text, active && styles.textActive]}>{label}</Text>
       )}
     </Pressable>
   );
