@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, FlatList, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, FlatList, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
+import SportLoader from '../components/SportLoader';
 import { useAuth } from '../context/AuthProvider';
 import { colors } from '../lib/theme';
 
@@ -42,7 +43,7 @@ export default function SearchScreen({ navigation }) {
       </View>
 
       {loading ? (
-        <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
+        <View style={styles.center}><SportLoader /></View>
       ) : (
         <FlatList
           data={results}
