@@ -32,7 +32,7 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
   const [durationMin, setDurationMin] = useState('');
   const [elevationM, setElevationM] = useState('');
   const [route, setRoute] = useState(null);
-  const [image, setImage] = useState(null);
+  const [images, setImages] = useState([]);
   const [saving, setSaving] = useState(false);
 
   const [place, setPlace] = useState(navRoute?.params?.presetPlace || null);
@@ -75,11 +75,24 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
     setDurationMin(String(m));
   }
 
+  const MAX_PHOTOS = 4;
+
   async function pickImage() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7 });
-    if (!result.canceled) setImage(result.assets[0]);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+      allowsMultipleSelection: true,
+      selectionLimit: MAX_PHOTOS,
+    });
+    if (!result.canceled) {
+      setImages((prev) => [...prev, ...result.assets].slice(0, MAX_PHOTOS));
+    }
+  }
+
+  function removeImage(idx) {
+    setImages((prev) => prev.filter((_, i) => i !== idx));
   }
 
   async function handleSave() {
@@ -102,15 +115,16 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
         .single();
       if (error) throw error;
 
-      if (image) {
-        const ext = image.uri.split('.').pop();
-        const path = `${user.id}/${post.id}.${ext}`;
-        const response = await fetch(image.uri);
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        const ext = img.uri.split('.').pop().split('?')[0] || 'jpg';
+        const path = `${user.id}/${post.id}_${i}.${ext}`;
+        const response = await fetch(img.uri);
         const blob = await response.blob();
-        const { error: uploadError } = await supabase.storage.from('media').upload(path, blob, { contentType: image.mimeType || 'image/jpeg' });
+        const { error: uploadError } = await supabase.storage.from('media').upload(path, blob, { contentType: img.mimeType || 'image/jpeg' });
         if (!uploadError) {
           const { data: pub } = supabase.storage.from('media').getPublicUrl(path);
-          await supabase.from('post_media').insert({ post_id: post.id, url: pub.publicUrl });
+          await supabase.from('post_media').insert({ post_id: post.id, url: pub.publicUrl, position: i });
         }
       }
 
@@ -198,15 +212,27 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
         </Field>
       )}
 
-      <Field label="Foto (opcional)">
-        <Pressable style={styles.imagePicker} onPress={pickImage}>
-          {image ? <Image source={{ uri: image.uri }} style={styles.imagePreview} /> : (
-            <>
-              <Ionicons name="camera-outline" size={22} color={colors.textDim} />
-              <Text style={styles.imagePickerText}>Toca para elegir una foto</Text>
-            </>
-          )}
-        </Pressable>
+      <Field label={`Fotos (opcional, hasta ${MAX_PHOTOS})`}>
+        {images.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {images.map((img, i) => (
+                <View key={i} style={styles.thumbWrap}>
+                  <Image source={{ uri: img.uri }} style={styles.thumb} />
+                  <Pressable style={styles.thumbRemove} onPress={() => removeImage(i)}>
+                    <Ionicons name="close" size={12} color="#fff" />
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        )}
+        {images.length < MAX_PHOTOS && (
+          <Pressable style={styles.imagePicker} onPress={pickImage}>
+            <Ionicons name="camera-outline" size={22} color={colors.textDim} />
+            <Text style={styles.imagePickerText}>Toca para elegir {images.length > 0 ? 'más fotos' : 'una foto'}</Text>
+          </Pressable>
+        )}
       </Field>
 
       <Field label="Descripción">
@@ -260,7 +286,9 @@ const styles = StyleSheet.create({
   placeResultText: { color: colors.text, fontSize: 13 },
   imagePicker: { height: 140, borderRadius: 14, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center', gap: 6, overflow: 'hidden' },
   imagePickerText: { color: colors.textDim, fontSize: 13 },
-  imagePreview: { width: '100%', height: '100%' },
+  thumbWrap: { width: 84, height: 84, borderRadius: 12, overflow: 'hidden', backgroundColor: colors.surface2 },
+  thumb: { width: '100%', height: '100%' },
+  thumbRemove: { position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
   btnPrimary: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 8, marginBottom: 32 },
   btnPrimaryText: { color: colors.bg, fontSize: 16, fontWeight: '700' },
 });
