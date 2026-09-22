@@ -68,13 +68,13 @@ function MapCardContent({ suppliedCoordinates, label, onLocationChange }) {
 
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => false,
-    onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4,
-    onMoveShouldSetPanResponderCapture: (_event, gesture) => Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4,
+    onMoveShouldSetPanResponder: (_event, gesture) => editable && (Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4),
+    onMoveShouldSetPanResponderCapture: (_event, gesture) => editable && (Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4),
     onPanResponderGrant: () => setDragging(true),
     onPanResponderMove: (_event, gesture) => setDrag({ x: gesture.dx, y: gesture.dy }),
     onPanResponderRelease: (_event, gesture) => finishDrag(gesture.dx, gesture.dy),
     onPanResponderTerminate: (_event, gesture) => finishDrag(gesture.dx, gesture.dy),
-  }), [center, zoom, onLocationChange]);
+  }), [center, zoom, editable, onLocationChange]);
 
   const tiles = useMemo(
     () => center ? mapTiles(center.lat, center.lng, mapWidth, zoom, drag) : [],
@@ -86,11 +86,20 @@ function MapCardContent({ suppliedCoordinates, label, onLocationChange }) {
     setDrag({ x: 0, y: 0 });
   }
 
+  function openDirections() {
+    if (!center) return;
+    const destination = `${center.lat},${center.lng}`;
+    Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&dir_action=navigate`);
+  }
+
   return (
     <View style={styles.card}>
       {center ? (
         <View
-          style={[styles.map, Platform.OS === 'web' && styles.mapWeb]}
+          style={[
+            styles.map,
+            Platform.OS === 'web' && (editable ? styles.mapWebEditable : styles.mapWebLocked),
+          ]}
           onLayout={(event) => setMapWidth(event.nativeEvent.layout.width)}
           {...panResponder.panHandlers}
         >
@@ -103,11 +112,11 @@ function MapCardContent({ suppliedCoordinates, label, onLocationChange }) {
           ))}
 
           <View pointerEvents="none" style={styles.dragHint}>
-            <Ionicons name="hand-left-outline" size={13} color={colors.text} />
+            <Ionicons name={editable ? 'hand-left-outline' : 'lock-closed-outline'} size={13} color={colors.text} />
             <Text style={styles.dragHintText}>
-              {dragging
-                ? (editable ? 'Suelta para colocar la chincheta' : 'Suelta para ver esta zona')
-                : (editable ? 'Arrastra el mapa para ajustar' : 'Arrastra para explorar el mapa')}
+              {editable
+                ? (dragging ? 'Suelta para colocar la chincheta' : 'Arrastra el mapa para ajustar')
+                : 'Ubicación fijada por quien la creó'}
             </Text>
           </View>
 
@@ -154,11 +163,18 @@ function MapCardContent({ suppliedCoordinates, label, onLocationChange }) {
           <Text style={styles.selectionTitle}>{center ? (editable ? 'Punto seleccionado' : 'Ubicación') : 'Ubicación sin punto exacto'}</Text>
           <Text style={styles.selectionText} numberOfLines={1}>
             {center
-              ? (editable ? 'La chincheta central es la ubicación que se guardará.' : 'Puedes mover y ampliar el mapa sin salir de Pista.')
+              ? (editable ? 'La chincheta central es la ubicación que se guardará.' : 'La chincheta marca el punto exacto elegido al crearla.')
               : label}
           </Text>
         </View>
       </View>
+
+      {!editable && center && (
+        <Pressable accessibilityRole="link" style={styles.directionsButton} onPress={openDirections}>
+          <Ionicons name="navigate-outline" size={18} color={colors.bg} />
+          <Text style={styles.directionsButtonText}>Cómo llegar desde mi ubicación</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -225,7 +241,8 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
   },
   map: { height: MAP_HEIGHT, overflow: 'hidden', backgroundColor: colors.surface2 },
-  mapWeb: { touchAction: 'none', userSelect: 'none', cursor: 'grab' },
+  mapWebEditable: { touchAction: 'none', userSelect: 'none', cursor: 'grab' },
+  mapWebLocked: { userSelect: 'none', cursor: 'default' },
   tile: { position: 'absolute', width: TILE_SIZE, height: TILE_SIZE },
   dragHint: {
     position: 'absolute', top: 10, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -267,4 +284,10 @@ const styles = StyleSheet.create({
   selectionTextWrap: { flex: 1, gap: 1 },
   selectionTitle: { color: colors.text, fontSize: 13, fontWeight: '800' },
   selectionText: { color: colors.textDim, fontSize: 10 },
+  directionsButton: {
+    marginHorizontal: 12, marginBottom: 12, minHeight: 44, borderRadius: 999,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: colors.accent,
+  },
+  directionsButtonText: { color: colors.bg, fontSize: 13, fontWeight: '800' },
 });
