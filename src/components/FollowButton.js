@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthProvider';
 import { colors } from '../lib/theme';
 
 // state: null (cargando/no aplica) | 'none' | 'pending' | 'following'
-export default function FollowButton({ profileId, isPrivate }) {
+export default function FollowButton({ profileId, isPrivate, compact = false }) {
   const { user } = useAuth();
   const [state, setState] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -44,7 +44,7 @@ export default function FollowButton({ profileId, isPrivate }) {
   const active = state === 'following' || state === 'pending';
 
   return (
-    <Pressable style={[styles.btn, active && styles.btnActive]} onPress={toggle} disabled={busy}>
+    <Pressable style={[styles.btn, compact && styles.btnCompact, active && styles.btnActive]} onPress={toggle} disabled={busy}>
       {busy ? (
         <ActivityIndicator size="small" color={active ? colors.text : colors.bg} />
       ) : (
@@ -56,6 +56,7 @@ export default function FollowButton({ profileId, isPrivate }) {
 
 const styles = StyleSheet.create({
   btn: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 22, alignItems: 'center', minWidth: 110 },
+  btnCompact: { minWidth: 82, paddingVertical: 8, paddingHorizontal: 13 },
   btnActive: { backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line },
   text: { color: colors.bg, fontWeight: '700', fontSize: 13 },
   textActive: { color: colors.text },
