@@ -162,6 +162,10 @@ export default function CreateMeetupScreen({ navigation }) {
             latitude={lat}
             longitude={lng}
             label={locationName.trim() || 'esta quedada'}
+            onLocationChange={(coords) => {
+              setLat(String(coords.lat));
+              setLng(String(coords.lng));
+            }}
           />
         ) : null}
       </Field>

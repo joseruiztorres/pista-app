@@ -142,6 +142,10 @@ export default function CreatePlaceScreen({ navigation, route }) {
             latitude={lat}
             longitude={lng}
             label={address.trim() || name.trim() || 'este sitio'}
+            onLocationChange={(coords) => {
+              setLat(String(coords.lat));
+              setLng(String(coords.lng));
+            }}
           />
         ) : null}
       </Field>
