@@ -14,17 +14,21 @@ function todayPlus(days) {
   return d.toISOString().slice(0, 10);
 }
 
-export default function CreateMeetupScreen({ navigation }) {
+export default function CreateMeetupScreen({ navigation, route }) {
   const { user, sportIds } = useAuth();
+  const editingMeetup = route.params?.meetup || null;
+  const initialDate = editingMeetup ? new Date(editingMeetup.scheduled_at) : null;
   const [sports, setSports] = useState([]);
-  const [sportId, setSportId] = useState(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [locationName, setLocationName] = useState('');
-  const [lat, setLat] = useState('');
-  const [lng, setLng] = useState('');
-  const [date, setDate] = useState(todayPlus(1));
-  const [time, setTime] = useState('18:00');
+  const [sportId, setSportId] = useState(editingMeetup?.sport_id || null);
+  const [title, setTitle] = useState(editingMeetup?.title || '');
+  const [description, setDescription] = useState(editingMeetup?.description || '');
+  const [locationName, setLocationName] = useState(editingMeetup?.location_name || '');
+  const [lat, setLat] = useState(editingMeetup?.lat != null ? String(editingMeetup.lat) : '');
+  const [lng, setLng] = useState(editingMeetup?.lng != null ? String(editingMeetup.lng) : '');
+  const [date, setDate] = useState(initialDate ? initialDate.toISOString().slice(0, 10) : todayPlus(1));
+  const [time, setTime] = useState(initialDate ? initialDate.toTimeString().slice(0, 5) : '18:00');
+  const [level, setLevel] = useState(editingMeetup?.level || 'todos');
+  const [capacity, setCapacity] = useState(editingMeetup?.capacity ? String(editingMeetup.capacity) : '');
   const [locating, setLocating] = useState(false);
   const [searchingMap, setSearchingMap] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -33,10 +37,15 @@ export default function CreateMeetupScreen({ navigation }) {
     supabase.from('sports').select('*').order('name').then(({ data }) => {
       const list = data || [];
       setSports(list);
-      const preferred = list.find((s) => sportIds.includes(s.id));
-      setSportId((preferred || list[0])?.id || null);
+      const preferred = list.find((s) => s.id === editingMeetup?.sport_id)
+        || list.find((s) => sportIds.includes(s.id));
+      setSportId((current) => current || (preferred || list[0])?.id || null);
     });
-  }, [sportIds]);
+  }, [sportIds, editingMeetup?.sport_id]);
+
+  useEffect(() => {
+    if (editingMeetup) navigation.setOptions({ title: 'Editar quedada' });
+  }, [navigation, editingMeetup]);
 
   async function useMyLocation() {
     setLocating(true);
@@ -75,28 +84,35 @@ export default function CreateMeetupScreen({ navigation }) {
       Alert.alert('Fecha no válida', 'Revisa la fecha y la hora.');
       return;
     }
+    if (capacity && Number(capacity) < 1) {
+      Alert.alert('Plazas no válidas', 'La capacidad debe ser al menos de una persona.');
+      return;
+    }
     setSaving(true);
     try {
-      const { data: meetup, error } = await supabase
-        .from('meetups')
-        .insert({
-          organizer_id: user.id,
-          sport_id: sportId,
-          title: title.trim(),
-          description: description.trim() || null,
-          location_name: locationName.trim(),
-          lat: lat ? Number(lat) : null,
-          lng: lng ? Number(lng) : null,
-          scheduled_at: scheduledAt.toISOString(),
-        })
-        .select()
-        .single();
+      const values = {
+        sport_id: sportId,
+        title: title.trim(),
+        description: description.trim() || null,
+        location_name: locationName.trim(),
+        lat: lat ? Number(lat) : null,
+        lng: lng ? Number(lng) : null,
+        scheduled_at: scheduledAt.toISOString(),
+        level,
+        capacity: capacity ? Number(capacity) : null,
+      };
+      const request = editingMeetup
+        ? supabase.from('meetups').update(values).eq('id', editingMeetup.id).eq('organizer_id', user.id)
+        : supabase.from('meetups').insert({ ...values, organizer_id: user.id });
+      const { data: meetup, error } = await request.select().single();
       if (error) throw error;
 
-      await supabase.from('meetup_attendees').insert({ meetup_id: meetup.id, profile_id: user.id });
+      if (!editingMeetup) {
+        await supabase.from('meetup_attendees').insert({ meetup_id: meetup.id, profile_id: user.id });
+      }
       navigation.replace('MeetupDetail', { meetupId: meetup.id });
     } catch (err) {
-      Alert.alert('No se pudo crear la quedada', err.message);
+      Alert.alert(editingMeetup ? 'No se pudieron guardar los cambios' : 'No se pudo crear la quedada', err.message);
     } finally {
       setSaving(false);
     }
@@ -126,6 +142,22 @@ export default function CreateMeetupScreen({ navigation }) {
           <TextInput style={[styles.input, { flex: 1 }]} placeholder="HH:MM" placeholderTextColor={colors.textDim}
             value={time} onChangeText={setTime} />
         </View>
+      </Field>
+
+      <Field label="Nivel">
+        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+          {[
+            ['todos', 'Todos'],
+            ['principiante', 'Principiante'],
+            ['intermedio', 'Intermedio'],
+            ['avanzado', 'Avanzado'],
+          ].map(([id, name]) => <Chip key={id} active={level === id} onPress={() => setLevel(id)} label={name} />)}
+        </View>
+      </Field>
+
+      <Field label="Plazas (opcional)">
+        <TextInput style={styles.input} placeholder="Sin límite" placeholderTextColor={colors.textDim}
+          keyboardType="number-pad" value={capacity} onChangeText={(value) => setCapacity(value.replace(/[^0-9]/g, ''))} />
       </Field>
 
       <Field label="Lugar">
@@ -176,7 +208,7 @@ export default function CreateMeetupScreen({ navigation }) {
       </Field>
 
       <Pressable style={styles.btnPrimary} onPress={handleSave} disabled={saving}>
-        <Text style={styles.btnPrimaryText}>{saving ? 'Creando…' : 'Crear quedada'}</Text>
+        <Text style={styles.btnPrimaryText}>{saving ? 'Guardando…' : editingMeetup ? 'Guardar cambios' : 'Crear quedada'}</Text>
       </Pressable>
     </ScrollView>
   );

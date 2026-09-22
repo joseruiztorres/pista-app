@@ -67,6 +67,10 @@ export default function MeetupDetailScreen({ route, navigation }) {
   if (!meetup) return <View style={styles.screen} />;
 
   const isOrganizer = meetup.organizer_id === user?.id;
+  const isFull = meetup.capacity && attendees.length >= meetup.capacity;
+  const levelLabel = {
+    todos: 'Todos los niveles', principiante: 'Principiante', intermedio: 'Intermedio', avanzado: 'Avanzado',
+  }[meetup.level || 'todos'];
 
   return (
     <FlatList
@@ -83,6 +87,17 @@ export default function MeetupDetailScreen({ route, navigation }) {
           <Text style={styles.title}>{meetup.title}</Text>
           {!!meetup.description && <Text style={styles.description}>{meetup.description}</Text>}
 
+          <View style={styles.infoRow}>
+            <View style={styles.infoChip}>
+              <Ionicons name="speedometer-outline" size={14} color={colors.accentStrong} />
+              <Text style={styles.infoText}>{levelLabel}</Text>
+            </View>
+            <View style={styles.infoChip}>
+              <Ionicons name="people-outline" size={14} color={colors.accentStrong} />
+              <Text style={styles.infoText}>{meetup.capacity ? `${attendees.length}/${meetup.capacity} plazas` : 'Sin límite de plazas'}</Text>
+            </View>
+          </View>
+
           <View style={styles.locationCard}>
             <Ionicons name="location-outline" size={18} color={colors.textDim} />
             <Text style={styles.locationText}>{meetup.location_name}</Text>
@@ -98,15 +113,21 @@ export default function MeetupDetailScreen({ route, navigation }) {
           <Text style={styles.organizer}>Organiza {meetup.profiles?.display_name || meetup.profiles?.username}</Text>
 
           {!isOrganizer ? (
-            <Pressable style={[styles.btnPrimary, joined && styles.btnJoined]} onPress={toggleJoin} disabled={busy}>
+            <Pressable style={[styles.btnPrimary, joined && styles.btnJoined, isFull && !joined && styles.btnDisabled]} onPress={toggleJoin} disabled={busy || (isFull && !joined)}>
               <Text style={[styles.btnPrimaryText, joined && styles.btnJoinedText]}>
-                {joined ? 'Apuntado ✓ · dejar quedada' : 'Apuntarme'}
+                {joined ? 'Apuntado ✓ · dejar quedada' : isFull ? 'Quedada completa' : 'Apuntarme'}
               </Text>
             </Pressable>
           ) : (
-            <Pressable style={styles.btnDanger} onPress={handleDelete}>
-              <Text style={styles.btnDangerText}>Cancelar quedada</Text>
-            </Pressable>
+            <View style={{ gap: 10 }}>
+              <Pressable style={styles.btnSecondary} onPress={() => navigation.navigate('CreateMeetup', { meetup })}>
+                <Ionicons name="create-outline" size={16} color={colors.accentStrong} />
+                <Text style={styles.btnSecondaryText}>Editar quedada</Text>
+              </Pressable>
+              <Pressable style={styles.btnDanger} onPress={handleDelete}>
+                <Text style={styles.btnDangerText}>Cancelar quedada</Text>
+              </Pressable>
+            </View>
           )}
 
           <Text style={styles.label}>Apuntados ({attendees.length})</Text>
@@ -131,6 +152,9 @@ const styles = StyleSheet.create({
   when: { color: colors.amber, fontSize: 13, fontWeight: '700' },
   title: { color: colors.text, fontSize: 20, fontWeight: '800' },
   description: { color: colors.textDim, fontSize: 14, lineHeight: 20 },
+  infoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  infoChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
+  infoText: { color: colors.text, fontSize: 11, fontWeight: '700' },
   locationCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: colors.line },
   locationText: { color: colors.text, fontSize: 13, flex: 1 },
   organizer: { color: colors.textDim, fontSize: 12 },
@@ -138,6 +162,9 @@ const styles = StyleSheet.create({
   btnPrimaryText: { color: colors.bg, fontSize: 15, fontWeight: '700' },
   btnJoined: { backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line },
   btnJoinedText: { color: colors.text },
+  btnDisabled: { opacity: 0.45 },
+  btnSecondary: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: colors.accent, borderRadius: 999, paddingVertical: 13 },
+  btnSecondaryText: { color: colors.accentStrong, fontSize: 14, fontWeight: '800' },
   btnDanger: { borderWidth: 1, borderColor: colors.clay, borderRadius: 999, paddingVertical: 14, alignItems: 'center' },
   btnDangerText: { color: colors.clay, fontSize: 15, fontWeight: '700' },
   label: { color: colors.textDim, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 4 },

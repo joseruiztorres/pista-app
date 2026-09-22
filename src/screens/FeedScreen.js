@@ -7,6 +7,7 @@ import { iconFor } from '../lib/sports';
 import PostCard from '../components/PostCard';
 import DailyChallengeCard from '../components/DailyChallengeCard';
 import SportLoader from '../components/SportLoader';
+import StoriesBar from '../components/StoriesBar';
 import { colors } from '../lib/theme';
 
 const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position), comments(count), place:place_id(name)';
@@ -159,14 +160,27 @@ export default function FeedScreen({ navigation }) {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={colors.accent} />}
-        ListHeaderComponent={filter === 'todo' ? <DailyChallengeCard /> : null}
+        ListHeaderComponent={
+          <View>
+            <StoriesBar navigation={navigation} />
+            {filter === 'todo' && <DailyChallengeCard />}
+          </View>
+        }
         ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
         onEndReachedThreshold={0.4}
         onEndReached={loadMore}
         ListFooterComponent={loadingMore ? <SportLoader size={20} label={null} style={{ marginTop: 14 }} /> : null}
-        ListEmptyComponent={<Text style={styles.empty}>
-          {filter === 'siguiendo' ? 'Todavía no sigues a nadie con publicaciones.' : 'Todavía no hay publicaciones. ¡Sé el primero!'}
-        </Text>}
+        ListEmptyComponent={
+          <View style={styles.emptyWrap}>
+            <Text style={styles.empty}>
+              {filter === 'siguiendo' ? 'Todavía no sigues a nadie con publicaciones.' : 'Todavía no hay publicaciones. ¡Sé el primero!'}
+            </Text>
+            <Pressable style={styles.discoverBtn} onPress={() => navigation.navigate('Search')}>
+              <Ionicons name="people-outline" size={16} color={colors.bg} />
+              <Text style={styles.discoverBtnText}>Descubrir personas</Text>
+            </Pressable>
+          </View>
+        }
         renderItem={({ item }) => (
           <PostCard
             post={item}
@@ -208,5 +222,8 @@ const styles = StyleSheet.create({
   chipText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
   chipTextActive: { color: colors.bg },
   list: { padding: 16, paddingTop: 6, gap: 14 },
-  empty: { color: colors.textDim, textAlign: 'center', marginTop: 40 },
+  emptyWrap: { alignItems: 'center', gap: 12, marginTop: 28 },
+  empty: { color: colors.textDim, textAlign: 'center' },
+  discoverBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10 },
+  discoverBtnText: { color: colors.bg, fontSize: 12, fontWeight: '800' },
 });

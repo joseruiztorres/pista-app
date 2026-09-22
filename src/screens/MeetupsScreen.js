@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
 import { colors } from '../lib/theme';
+import MeetupsMap from '../components/MeetupsMap';
 
 const MEETUP_SELECT = '*, profiles:organizer_id(username, display_name), meetup_attendees(count)';
 
@@ -19,8 +20,10 @@ export default function MeetupsScreen({ navigation }) {
   const { sportIds } = useAuth();
   const [sports, setSports] = useState([]);
   const [filter, setFilter] = useState('todo');
+  const [period, setPeriod] = useState('proximas');
   const [meetups, setMeetups] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('lista');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -33,11 +36,17 @@ export default function MeetupsScreen({ navigation }) {
       .gte('scheduled_at', new Date().toISOString())
       .order('scheduled_at', { ascending: true });
     if (filter !== 'todo') query = query.eq('sport_id', filter);
+    if (period !== 'proximas') {
+      const end = new Date();
+      if (period === 'hoy') end.setHours(23, 59, 59, 999);
+      else end.setDate(end.getDate() + 7);
+      query = query.lte('scheduled_at', end.toISOString());
+    }
 
     const { data } = await query;
     setMeetups(data || []);
     setLoading(false);
-  }, [filter]);
+  }, [filter, period]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
@@ -72,7 +81,32 @@ export default function MeetupsScreen({ navigation }) {
         )}
       />
 
-      <FlatList
+      <View style={styles.periodRow}>
+        {[
+          ['proximas', 'Próximas'],
+          ['hoy', 'Hoy'],
+          ['semana', '7 días'],
+        ].map(([id, label]) => (
+          <Pressable key={id} style={[styles.periodChip, period === id && styles.periodChipActive]} onPress={() => setPeriod(id)}>
+            <Text style={[styles.periodText, period === id && styles.periodTextActive]}>{label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={styles.viewToggle}>
+        <Pressable style={[styles.viewOption, viewMode === 'lista' && styles.viewOptionActive]} onPress={() => setViewMode('lista')}>
+          <Ionicons name="list-outline" size={14} color={viewMode === 'lista' ? colors.bg : colors.textDim} />
+          <Text style={[styles.viewOptionText, viewMode === 'lista' && styles.viewOptionTextActive]}>Lista</Text>
+        </Pressable>
+        <Pressable style={[styles.viewOption, viewMode === 'mapa' && styles.viewOptionActive]} onPress={() => setViewMode('mapa')}>
+          <Ionicons name="map-outline" size={14} color={viewMode === 'mapa' ? colors.bg : colors.textDim} />
+          <Text style={[styles.viewOptionText, viewMode === 'mapa' && styles.viewOptionTextActive]}>Mapa</Text>
+        </Pressable>
+      </View>
+
+      {viewMode === 'mapa' ? (
+        <MeetupsMap meetups={meetups} onPressMeetup={(item) => navigation.navigate('MeetupDetail', { meetupId: item.id })} />
+      ) : <FlatList
         data={meetups}
         keyExtractor={(m) => m.id}
         contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
@@ -99,12 +133,16 @@ export default function MeetupsScreen({ navigation }) {
               </View>
               <View style={styles.metaRow}>
                 <Ionicons name="people-outline" size={13} color={colors.textDim} />
-                <Text style={styles.meta}>{count} apuntad{count === 1 ? 'o' : 'os'} · organiza {item.profiles?.display_name || item.profiles?.username}</Text>
+                <Text style={styles.meta}>
+                  {item.capacity ? `${count}/${item.capacity} plazas` : `${count} apuntad${count === 1 ? 'o' : 'os'}`}
+                  {' · '}{({ todos: 'todos los niveles', principiante: 'principiante', intermedio: 'intermedio', avanzado: 'avanzado' })[item.level || 'todos']}
+                </Text>
               </View>
+              <Text style={styles.organizer}>Organiza {item.profiles?.display_name || item.profiles?.username}</Text>
             </Pressable>
           );
         }}
-      />
+      />}
     </View>
   );
 }
@@ -119,6 +157,16 @@ const styles = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, marginRight: 8 },
   chipActive: { backgroundColor: colors.accent },
   chipText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },
+  periodRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 4 },
+  periodChip: { borderWidth: 1, borderColor: colors.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  periodChipActive: { borderColor: colors.accent, backgroundColor: 'rgba(76,168,115,0.12)' },
+  periodText: { color: colors.textDim, fontSize: 11, fontWeight: '700' },
+  periodTextActive: { color: colors.accentStrong },
+  viewToggle: { alignSelf: 'flex-end', flexDirection: 'row', marginHorizontal: 16, marginTop: 7, backgroundColor: colors.surface2, borderRadius: 999, padding: 3 },
+  viewOption: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 6 },
+  viewOptionActive: { backgroundColor: colors.accent },
+  viewOptionText: { color: colors.textDim, fontSize: 11, fontWeight: '800' },
+  viewOptionTextActive: { color: colors.bg },
   empty: { alignItems: 'center', gap: 8, paddingTop: 48, paddingHorizontal: 24 },
   emptyText: { color: colors.textDim, fontSize: 13, textAlign: 'center' },
   card: { backgroundColor: colors.surface, borderRadius: 16, padding: 14, gap: 6, borderWidth: 1, borderColor: colors.line },
@@ -128,4 +176,5 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: 15, fontWeight: '700' },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   meta: { color: colors.textDim, fontSize: 12, flexShrink: 1 },
+  organizer: { color: colors.textDim, fontSize: 10, marginTop: 2 },
 });

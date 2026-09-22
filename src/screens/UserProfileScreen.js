@@ -10,6 +10,7 @@ import FollowButton from '../components/FollowButton';
 import MessageButton from '../components/MessageButton';
 import PostCard from '../components/PostCard';
 import Avatar from '../components/Avatar';
+import HighlightsRow from '../components/HighlightsRow';
 
 const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position), comments(count)';
 
@@ -132,6 +133,8 @@ export default function UserProfileScreen({ route, navigation }) {
             <FollowButton profileId={profile.id} isPrivate={profile.is_private} />
             <MessageButton profileId={profile.id} profileName={profile.display_name || profile.username} />
           </View>
+
+          <HighlightsRow profileId={profile.id} isMine={isMine} navigation={navigation} />
 
           {badges.length > 0 && (
             <View style={styles.badgesRow}>

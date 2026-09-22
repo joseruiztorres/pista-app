@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
@@ -41,10 +42,13 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
   const [rating, setRating] = useState(0);
 
   useEffect(() => {
-    supabase.from('sports').select('*').order('name').then(({ data }) => {
+    Promise.all([
+      supabase.from('sports').select('*').order('name'),
+      AsyncStorage.getItem('@pista:last_sport'),
+    ]).then(([{ data }, lastSport]) => {
       const list = data || [];
       setSports(list);
-      const preferred = list.find((s) => sportIds.includes(s.id));
+      const preferred = list.find((s) => s.id === lastSport) || list.find((s) => sportIds.includes(s.id));
       setSportId((preferred || list[0])?.id || null);
     });
   }, [sportIds]);
@@ -129,6 +133,7 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
       }
 
       await checkFirstPostBadge(user.id);
+      await AsyncStorage.setItem('@pista:last_sport', sportId);
       navigation.goBack();
     } catch (err) {
       Alert.alert('No se pudo publicar', err.message);
