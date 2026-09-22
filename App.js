@@ -34,6 +34,9 @@ import EditPostScreen from './src/screens/EditPostScreen';
 import FollowRequestsScreen from './src/screens/FollowRequestsScreen';
 import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 import AdminReportsScreen from './src/screens/AdminReportsScreen';
+import CreateStoryScreen from './src/screens/CreateStoryScreen';
+import StoryViewerScreen from './src/screens/StoryViewerScreen';
+import CreateHighlightScreen from './src/screens/CreateHighlightScreen';
 import { registerForPushNotificationsAsync } from './src/lib/pushNotifications';
 
 const Stack = createNativeStackNavigator();
@@ -118,6 +121,9 @@ function RootNavigator() {
           <Stack.Screen name="EditPost" component={EditPostScreen} options={{ presentation: 'modal', headerShown: true, title: 'Editar publicación' }} />
           <Stack.Screen name="FollowRequests" component={FollowRequestsScreen} options={{ headerShown: true, title: 'Solicitudes de seguimiento' }} />
           <Stack.Screen name="AdminReports" component={AdminReportsScreen} options={{ headerShown: true, title: 'Reportes' }} />
+          <Stack.Screen name="CreateStory" component={CreateStoryScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nueva historia' }} />
+          <Stack.Screen name="StoryViewer" component={StoryViewerScreen} options={{ headerShown: false, animation: 'fade' }} />
+          <Stack.Screen name="CreateHighlight" component={CreateHighlightScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nuevo destacado' }} />
         </>
       )}
     </Stack.Navigator>
