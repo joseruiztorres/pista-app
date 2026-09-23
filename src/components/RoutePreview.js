@@ -35,7 +35,7 @@ export default function RoutePreview({ route, width = 280, height = 90 }) {
         <Circle cx={firstX} cy={firstY} r={4} fill={colors.accentStrong} />
         <Circle cx={lastX} cy={lastY} r={4} fill={colors.amber} />
       </Svg>
-      <Text style={styles.hint}>vista previa de ruta · mapa interactivo llega en la Fase 3</Text>
+      <Text style={styles.hint}>recorrido registrado con GPS</Text>
     </View>
   );
 }

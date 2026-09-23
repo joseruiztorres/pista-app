@@ -6,6 +6,7 @@ import { iconFor } from '../lib/sports';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import RoutePreview from './RoutePreview';
+import VideoPlayer from './VideoPlayer';
 
 const TYPE_LABEL = { ruta: 'Ruta', progreso: 'Progreso', comida: 'Comida', tip: 'Tip', resena: 'Reseña' };
 const REPORT_REASONS = [
@@ -21,7 +22,9 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
   const details = post.details || {};
   const commentCount = post.comments?.[0]?.count ?? 0;
   const isMine = user && user.id === post.author_id;
-  const photos = (post.post_media || []).slice().sort((a, b) => (a.position || 0) - (b.position || 0));
+  const media = (post.post_media || []).slice().sort((a, b) => (a.position || 0) - (b.position || 0));
+  const photos = media.filter((item) => (item.media_type || 'image') === 'image');
+  const video = media.find((item) => item.media_type === 'video');
 
   const [stage, setStage] = useState(null); // null | 'main' | 'confirmDelete' | 'confirmBlock' | 'report'
   const [busy, setBusy] = useState(false);
@@ -56,6 +59,15 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
     closeMenu();
     if (error) { Alert.alert('No se pudo enviar el reporte', error.message); return; }
     Alert.alert('Gracias', 'Hemos recibido tu reporte.');
+  }
+
+  async function handleMutePosts() {
+    setBusy(true);
+    const { data: current } = await supabase.from('mutes').select('mute_stories').eq('owner_id', user.id).eq('muted_id', post.author_id).maybeSingle();
+    const { error } = await supabase.from('mutes').upsert({ owner_id: user.id, muted_id: post.author_id, mute_posts: true, mute_stories: !!current?.mute_stories }, { onConflict: 'owner_id,muted_id' });
+    setBusy(false); closeMenu();
+    if (error) { Alert.alert('No se pudo silenciar', error.message); return; }
+    onChanged?.();
   }
 
   function onPhotoScroll(e) {
@@ -100,9 +112,13 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
         <View style={styles.statsRow}>
           {details.distance_km && <Stat label="Distancia" value={`${details.distance_km} km`} />}
           {details.duration_min && <Stat label="Duración" value={`${details.duration_min} min`} />}
+          {details.pace_min_km && <Stat label="Ritmo" value={details.pace_min_km} />}
+          {details.avg_speed_kmh && <Stat label="Velocidad" value={details.avg_speed_kmh} />}
           {details.elevation_m && <Stat label="Desnivel" value={`${details.elevation_m} m`} />}
         </View>
       )}
+
+      {video && <VideoPlayer uri={video.url} style={styles.video} controls loop={false} />}
 
       {post.type === 'resena' && (post.place || details.rating) && (
         <View style={styles.reviewRow}>
@@ -119,6 +135,18 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
               ))}
             </View>
           )}
+        </View>
+      )}
+
+      {(details.exercise || details.distance_m || details.score || details.workout_duration_min) && (
+        <View style={styles.statsRow}>
+          {details.exercise && <Stat label="Entrenamiento" value={details.exercise} />}
+          {details.sets && <Stat label="Series" value={String(details.sets)} />}
+          {details.reps && <Stat label="Repeticiones" value={String(details.reps)} />}
+          {details.weight_kg && <Stat label="Peso" value={`${details.weight_kg} kg`} />}
+          {details.distance_m && <Stat label="Distancia" value={`${details.distance_m} m`} />}
+          {details.score && <Stat label="Resultado" value={details.score} />}
+          {details.workout_duration_min && <Stat label="Duración" value={`${details.workout_duration_min} min`} />}
         </View>
       )}
 
@@ -163,6 +191,7 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
             )}
             {stage === 'main' && !isMine && (
               <>
+                <MenuItem icon="volume-mute-outline" label={`Silenciar publicaciones de @${author.username}`} onPress={handleMutePosts} disabled={busy} />
                 <MenuItem icon="flag-outline" label="Reportar publicación" onPress={() => setStage('report')} />
                 <MenuItem icon="ban-outline" label={`Bloquear a @${author.username}`} destructive onPress={() => setStage('confirmBlock')} />
                 <MenuItem icon="close" label="Cancelar" onPress={closeMenu} />
@@ -236,6 +265,7 @@ const styles = StyleSheet.create({
   statLabel: { color: colors.textDim, fontSize: 10 },
   statValue: { color: colors.text, fontSize: 14, fontWeight: '700' },
   image: { width: '100%', aspectRatio: 16 / 10, borderRadius: 14, backgroundColor: colors.surface2 },
+  video: { aspectRatio: 9 / 16, maxHeight: 560 },
   imageCarousel: { width: Dimensions.get('window').width - 60, aspectRatio: 16 / 10, borderRadius: 14, backgroundColor: colors.surface2, marginRight: 0 },
   photoCounter: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
   photoCounterText: { color: '#fff', fontSize: 11, fontWeight: '700' },

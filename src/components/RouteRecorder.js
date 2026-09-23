@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import RoutePreview from './RoutePreview';
 import { routeDistanceKm } from '../lib/geo';
 import { colors } from '../lib/theme';
@@ -26,13 +27,14 @@ export default function RouteRecorder({ onFinish }) {
   const startedAtRef = useRef(null);
   const pausedAccumRef = useRef(0);
 
-  const available = typeof navigator !== 'undefined' && !!navigator.geolocation;
+  const available = Platform.OS !== 'web' || (typeof navigator !== 'undefined' && !!navigator.geolocation);
 
   useEffect(() => () => stopWatch(), []);
 
   function stopWatch() {
-    if (watchIdRef.current != null && navigator.geolocation) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
+    if (watchIdRef.current != null) {
+      if (Platform.OS === 'web' && navigator.geolocation) navigator.geolocation.clearWatch(watchIdRef.current);
+      else watchIdRef.current?.remove?.();
       watchIdRef.current = null;
     }
     if (timerRef.current) {
@@ -48,7 +50,28 @@ export default function RouteRecorder({ onFinish }) {
     }, 1000);
   }
 
-  function start() {
+  async function startLocationWatch() {
+    if (Platform.OS === 'web') {
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) => addPoint(pos.coords.latitude, pos.coords.longitude, pos.coords.altitude),
+        (err) => setError(err.message || 'No se pudo acceder a tu ubicación.'),
+        { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 }
+      );
+      return;
+    }
+    const permission = await Location.requestForegroundPermissionsAsync();
+    if (!permission.granted) throw new Error('Permite usar la ubicación para grabar la actividad.');
+    watchIdRef.current = await Location.watchPositionAsync(
+      { accuracy: Location.Accuracy.High, timeInterval: 2000, distanceInterval: 3 },
+      (pos) => addPoint(pos.coords.latitude, pos.coords.longitude, pos.coords.altitude),
+    );
+  }
+
+  function addPoint(latitude, longitude, altitude) {
+    setRoute((prev) => [...prev, altitude == null ? [latitude, longitude] : [latitude, longitude, altitude]]);
+  }
+
+  async function start() {
     if (!available) {
       setError('Este dispositivo no permite compartir ubicación en tiempo real.');
       return;
@@ -59,14 +82,7 @@ export default function RouteRecorder({ onFinish }) {
     setElapsedSec(0);
     setStatus('recording');
     startTimer();
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => {
-        const point = [pos.coords.latitude, pos.coords.longitude];
-        setRoute((prev) => [...prev, point]);
-      },
-      (err) => setError(err.message || 'No se pudo acceder a tu ubicación.'),
-      { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 }
-    );
+    try { await startLocationWatch(); } catch (err) { setError(err.message); stopWatch(); setStatus('idle'); }
   }
 
   function pause() {
@@ -75,17 +91,10 @@ export default function RouteRecorder({ onFinish }) {
     setStatus('paused');
   }
 
-  function resume() {
+  async function resume() {
     setStatus('recording');
     startTimer();
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => {
-        const point = [pos.coords.latitude, pos.coords.longitude];
-        setRoute((prev) => [...prev, point]);
-      },
-      (err) => setError(err.message || 'No se pudo acceder a tu ubicación.'),
-      { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 }
-    );
+    try { await startLocationWatch(); } catch (err) { setError(err.message); stopWatch(); setStatus('paused'); }
   }
 
   function stop() {
@@ -97,8 +106,12 @@ export default function RouteRecorder({ onFinish }) {
     }
     setStatus('done');
     const distanceKm = routeDistanceKm(route);
-    const durationMin = Math.max(1, Math.round(elapsedSec / 60));
-    onFinish({ route, distanceKm, durationMin });
+    const durationSec = Math.max(1, Math.round(elapsedSec));
+    const durationMin = Math.max(1, Math.round(durationSec / 60));
+    const altitudes = route.map((point) => point[2]).filter((value) => Number.isFinite(value));
+    let elevationM = 0;
+    for (let i = 1; i < altitudes.length; i++) elevationM += Math.max(0, altitudes[i] - altitudes[i - 1]);
+    onFinish({ route, distanceKm, durationMin, durationSec, elevationM: Math.round(elevationM) });
   }
 
   function reset() {

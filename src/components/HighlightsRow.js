@@ -11,7 +11,7 @@ export default function HighlightsRow({ profileId, isMine, navigation }) {
     if (!profileId) return;
     const { data } = await supabase
       .from('highlights')
-      .select('id, title, cover_url, position, highlight_stories(position, stories(id, media_url))')
+      .select('id, title, cover_url, position, highlight_stories(position, stories(id, media_url, media_type))')
       .eq('owner_id', profileId)
       .order('position', { ascending: true })
       .order('created_at', { ascending: true });
@@ -37,7 +37,8 @@ export default function HighlightsRow({ profileId, isMine, navigation }) {
         )}
         {highlights.map((highlight) => {
           const linked = (highlight.highlight_stories || []).slice().sort((a, b) => a.position - b.position);
-          const cover = highlight.cover_url || linked[0]?.stories?.media_url;
+          const firstStory = linked[0]?.stories;
+          const cover = highlight.cover_url || (firstStory?.media_type === 'video' ? null : firstStory?.media_url);
           return (
             <Pressable
               key={highlight.id}
@@ -48,7 +49,7 @@ export default function HighlightsRow({ profileId, isMine, navigation }) {
                 {cover ? (
                   <Image source={{ uri: cover }} style={styles.image} />
                 ) : (
-                  <Ionicons name="images-outline" size={22} color={colors.textDim} />
+                  <Ionicons name={firstStory?.media_type === 'video' ? 'play' : 'images-outline'} size={22} color={colors.textDim} />
                 )}
               </View>
               <Text style={styles.label} numberOfLines={1}>{highlight.title}</Text>

@@ -6,20 +6,20 @@ import { useAuth } from '../context/AuthProvider';
 import Avatar from './Avatar';
 import { colors } from '../lib/theme';
 
-const STORY_SELECT = 'id, author_id, media_url, caption, created_at, expires_at, profiles:author_id(id, username, display_name, avatar_url), story_views(profile_id)';
+const STORY_SELECT = 'id, author_id, media_url, media_type, caption, created_at, expires_at, profiles:author_id(id, username, display_name, avatar_url), story_views(profile_id)';
 
 export default function StoriesBar({ navigation }) {
   const { user, profile } = useAuth();
   const [stories, setStories] = useState([]);
 
   const load = useCallback(async () => {
-    const { data } = await supabase
-      .from('stories')
-      .select(STORY_SELECT)
-      .gt('expires_at', new Date().toISOString())
-      .order('created_at', { ascending: true });
-    setStories(data || []);
-  }, []);
+    const [{ data }, mutedResult] = await Promise.all([
+      supabase.from('stories').select(STORY_SELECT).gt('expires_at', new Date().toISOString()).order('created_at', { ascending: true }),
+      user ? supabase.from('mutes').select('muted_id').eq('owner_id', user.id).eq('mute_stories', true) : Promise.resolve({ data: [] }),
+    ]);
+    const mutedIds = new Set((mutedResult.data || []).map((row) => row.muted_id));
+    setStories((data || []).filter((story) => !mutedIds.has(story.author_id)));
+  }, [user]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => navigation.addListener('focus', load), [navigation, load]);
