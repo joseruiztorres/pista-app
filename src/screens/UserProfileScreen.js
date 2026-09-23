@@ -126,6 +126,7 @@ export default function UserProfileScreen({ route, navigation }) {
           liked={!!likedIds[item.id]}
           onToggleLike={() => toggleLike(item)}
           onPressComments={(postId) => navigation.navigate('PostDetail', { postId })}
+          onPressRoute={(postId) => navigation.navigate('ActivityDetail', { postId })}
           onEdit={(post) => navigation.navigate('EditPost', { post })}
           onChanged={load}
         />

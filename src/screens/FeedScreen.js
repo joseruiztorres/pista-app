@@ -192,6 +192,7 @@ export default function FeedScreen({ navigation }) {
             onToggleLike={() => toggleLike(item)}
             onPressAuthor={(profileId) => navigation.navigate('UserProfile', { profileId })}
             onPressComments={(postId) => navigation.navigate('PostDetail', { postId })}
+            onPressRoute={(postId) => navigation.navigate('ActivityDetail', { postId })}
             onEdit={(post) => navigation.navigate('EditPost', { post })}
             onChanged={load}
           />

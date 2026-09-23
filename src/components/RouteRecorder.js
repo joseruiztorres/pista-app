@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet, Alert, Platform } from 'react-native
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import RoutePreview from './RoutePreview';
-import { routeDistanceKm } from '../lib/geo';
+import { haversineKm, routeDistanceKm } from '../lib/geo';
 import { colors } from '../lib/theme';
 
 function formatDuration(sec) {
@@ -17,7 +17,7 @@ function formatDuration(sec) {
 // duración y ritmo calculados a partir de las posiciones reales, no de un
 // trazado de ejemplo. Al terminar, entrega { route, distanceKm, durationMin }
 // al padre para que rellene el formulario de publicación.
-export default function RouteRecorder({ onFinish }) {
+export default function RouteRecorder({ onFinish, targetRoute }) {
   const [status, setStatus] = useState('idle'); // idle | recording | paused | done
   const [route, setRoute] = useState([]);
   const [elapsedSec, setElapsedSec] = useState(0);
@@ -53,7 +53,7 @@ export default function RouteRecorder({ onFinish }) {
   async function startLocationWatch() {
     if (Platform.OS === 'web') {
       watchIdRef.current = navigator.geolocation.watchPosition(
-        (pos) => addPoint(pos.coords.latitude, pos.coords.longitude, pos.coords.altitude),
+        (pos) => addPoint(pos.coords.latitude, pos.coords.longitude, pos.coords.altitude, pos.coords.accuracy),
         (err) => setError(err.message || 'No se pudo acceder a tu ubicación.'),
         { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 }
       );
@@ -63,12 +63,19 @@ export default function RouteRecorder({ onFinish }) {
     if (!permission.granted) throw new Error('Permite usar la ubicación para grabar la actividad.');
     watchIdRef.current = await Location.watchPositionAsync(
       { accuracy: Location.Accuracy.High, timeInterval: 2000, distanceInterval: 3 },
-      (pos) => addPoint(pos.coords.latitude, pos.coords.longitude, pos.coords.altitude),
+      (pos) => addPoint(pos.coords.latitude, pos.coords.longitude, pos.coords.altitude, pos.coords.accuracy),
     );
   }
 
-  function addPoint(latitude, longitude, altitude) {
-    setRoute((prev) => [...prev, altitude == null ? [latitude, longitude] : [latitude, longitude, altitude]]);
+  function addPoint(latitude, longitude, altitude, accuracy) {
+    if (Number.isFinite(accuracy) && accuracy > 60) return;
+    setRoute((prev) => {
+      const next = altitude == null ? [latitude, longitude] : [latitude, longitude, altitude];
+      if (!prev.length) return [next];
+      const deltaKm = haversineKm(prev[prev.length - 1], next);
+      if (deltaKm < 0.002 || deltaKm > 0.25) return prev;
+      return [...prev, next];
+    });
   }
 
   async function start() {
@@ -110,7 +117,10 @@ export default function RouteRecorder({ onFinish }) {
     const durationMin = Math.max(1, Math.round(durationSec / 60));
     const altitudes = route.map((point) => point[2]).filter((value) => Number.isFinite(value));
     let elevationM = 0;
-    for (let i = 1; i < altitudes.length; i++) elevationM += Math.max(0, altitudes[i] - altitudes[i - 1]);
+    for (let i = 1; i < altitudes.length; i++) {
+      const gain = altitudes[i] - altitudes[i - 1];
+      if (gain >= 1 && gain <= 25) elevationM += gain;
+    }
     onFinish({ route, distanceKm, durationMin, durationSec, elevationM: Math.round(elevationM) });
   }
 
@@ -121,14 +131,18 @@ export default function RouteRecorder({ onFinish }) {
   }
 
   const distanceKm = routeDistanceKm(route);
+  const targetDistanceKm = routeDistanceKm(targetRoute || []);
 
   return (
     <View style={styles.wrap}>
       {status === 'idle' && (
-        <Pressable style={styles.startBtn} onPress={start}>
-          <Ionicons name="navigate-circle-outline" size={18} color={colors.accentStrong} />
-          <Text style={styles.startBtnText}>Empezar a grabar ruta con GPS</Text>
-        </Pressable>
+        <View style={styles.idleWrap}>
+          {!!targetDistanceKm && <RoutePreview route={targetRoute} height={120} label={`Ruta de referencia · ${targetDistanceKm.toFixed(2)} km`} />}
+          <Pressable style={styles.startBtn} onPress={start}>
+            <Ionicons name="navigate-circle-outline" size={18} color={colors.accentStrong} />
+            <Text style={styles.startBtnText}>{targetDistanceKm ? 'Empezar siguiendo esta ruta' : 'Empezar a grabar ruta con GPS'}</Text>
+          </Pressable>
+        </View>
       )}
 
       {(status === 'recording' || status === 'paused') && (
@@ -137,8 +151,9 @@ export default function RouteRecorder({ onFinish }) {
             <Stat label="Distancia" value={`${distanceKm.toFixed(2)} km`} />
             <Stat label="Tiempo" value={formatDuration(elapsedSec)} />
             <Stat label="Puntos" value={String(route.length)} />
+            {!!targetDistanceKm && <Stat label="Objetivo" value={`${targetDistanceKm.toFixed(2)} km`} />}
           </View>
-          {route.length >= 2 && <RoutePreview route={route} height={110} />}
+          {route.length >= 2 && <RoutePreview route={route} comparisonRoute={targetRoute} height={130} label={targetDistanceKm ? 'verde: tu recorrido · gris: ruta de referencia' : 'recorrido registrado con GPS'} />}
           <View style={styles.controlsRow}>
             {status === 'recording' ? (
               <Pressable style={styles.controlBtn} onPress={pause}>
@@ -165,7 +180,7 @@ export default function RouteRecorder({ onFinish }) {
             <Stat label="Distancia" value={`${distanceKm.toFixed(2)} km`} />
             <Stat label="Tiempo" value={formatDuration(elapsedSec)} />
           </View>
-          <RoutePreview route={route} height={110} />
+          <RoutePreview route={route} comparisonRoute={targetRoute} height={130} label={targetDistanceKm ? 'verde: tu recorrido · gris: ruta de referencia' : 'recorrido registrado con GPS'} />
           <Pressable style={styles.secondaryBtn} onPress={reset}>
             <Ionicons name="refresh" size={14} color={colors.accentStrong} />
             <Text style={styles.secondaryBtnText}>Grabar de nuevo</Text>
@@ -189,6 +204,7 @@ function Stat({ label, value }) {
 
 const styles = StyleSheet.create({
   wrap: { gap: 8 },
+  idleWrap: { gap: 10 },
   startBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface2,
     borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14, alignSelf: 'flex-start',

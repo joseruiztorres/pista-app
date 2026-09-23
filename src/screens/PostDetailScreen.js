@@ -76,6 +76,7 @@ export default function PostDetailScreen({ route, navigation }) {
               liked={liked}
               onToggleLike={toggleLike}
               onPressAuthor={(profileId) => navigation.navigate('UserProfile', { profileId })}
+              onPressRoute={(routePostId) => navigation.navigate('ActivityDetail', { postId: routePostId })}
               onEdit={(p) => navigation.navigate('EditPost', { post: p })}
               onChanged={() => { load(); navigation.goBack(); }}
             />

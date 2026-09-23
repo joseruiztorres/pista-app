@@ -95,6 +95,10 @@ export default function ProfileScreen({ navigation }) {
           <Ionicons name="calendar-outline" size={18} color={colors.accentStrong} />
           <Text style={styles.quickText}>Calendario</Text>
         </Pressable>
+        <Pressable style={[styles.quickAction, styles.routeAction]} onPress={() => navigation.navigate('Routes')}>
+          <Ionicons name="map-outline" size={18} color={colors.accentStrong} />
+          <Text style={styles.quickText}>Mis rutas</Text>
+        </Pressable>
       </View>
 
       <HighlightsRow profileId={user?.id} isMine navigation={navigation} />
@@ -138,8 +142,9 @@ const styles = StyleSheet.create({
   progressStat: { alignItems: 'center', flex: 1 },
   progressValue: { color: colors.accentStrong, fontSize: 18, fontWeight: '900' },
   progressLabel: { color: colors.textDim, fontSize: 10, marginTop: 2 },
-  quickRow: { width: '100%', flexDirection: 'row', gap: 8, marginTop: 2 },
+  quickRow: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 },
   quickAction: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, paddingVertical: 11 },
+  routeAction: { flexBasis: '100%' },
   quickText: { color: colors.text, fontSize: 11, fontWeight: '800' },
   badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 18, paddingHorizontal: 24 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },

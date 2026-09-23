@@ -16,7 +16,7 @@ const REPORT_REASONS = [
   { id: 'otro', label: 'Otro motivo' },
 ];
 
-export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onPressComments, onEdit, onChanged }) {
+export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onPressComments, onPressRoute, onEdit, onChanged }) {
   const { user } = useAuth();
   const author = post.profiles || {};
   const details = post.details || {};
@@ -106,7 +106,16 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
       </View>
 
       {details.route && (
-        <RoutePreview route={details.route} />
+        <Pressable disabled={!onPressRoute} onPress={() => onPressRoute?.(post.id)}>
+          <RoutePreview route={details.route} />
+          {onPressRoute && (
+            <View style={styles.routeLink}>
+              <Ionicons name="map-outline" size={14} color={colors.accentStrong} />
+              <Text style={styles.routeLinkText}>Ver recorrido completo</Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.textDim} />
+            </View>
+          )}
+        </Pressable>
       )}
       {post.type === 'ruta' && !details.activity_kind && (details.distance_km || details.duration_min) && (
         <View style={styles.statsRow}>
@@ -282,6 +291,8 @@ const styles = StyleSheet.create({
   photoCounter: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
   photoCounterText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   caption: { color: colors.text, fontSize: 14, lineHeight: 20 },
+  routeLink: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 8 },
+  routeLinkText: { flex: 1, color: colors.accentStrong, fontSize: 11, fontWeight: '800' },
   actions: { flexDirection: 'row', gap: 20 },
   action: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   actionText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },

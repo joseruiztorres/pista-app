@@ -14,22 +14,24 @@ const ACTIVITY_SPORTS = ['running', 'ciclismo', 'caminar', 'senderismo', 'trail'
 
 function cropRoute(route, meters = 200) {
   if (!route || route.length < 3) return route;
+  const totalKm = route.slice(1).reduce((sum, point, index) => sum + haversineKm(route[index], point), 0);
+  const cropKm = Math.min(meters / 1000, totalKm * 0.2);
   let start = 0;
   let accumulated = 0;
-  while (start < route.length - 1 && accumulated < meters / 1000) {
+  while (start < route.length - 2 && accumulated < cropKm) {
     accumulated += haversineKm(route[start], route[start + 1]);
     start += 1;
   }
   let end = route.length - 1;
   accumulated = 0;
-  while (end > start && accumulated < meters / 1000) {
+  while (end > start + 1 && accumulated < cropKm) {
     accumulated += haversineKm(route[end], route[end - 1]);
     end -= 1;
   }
   return route.slice(start, end + 1);
 }
 
-export default function RecordActivityScreen({ navigation }) {
+export default function RecordActivityScreen({ navigation, route: navRoute }) {
   const { user } = useAuth();
   const [sports, setSports] = useState([]);
   const [sportId, setSportId] = useState('running');
@@ -45,11 +47,32 @@ export default function RecordActivityScreen({ navigation }) {
   const [climbVertical, setClimbVertical] = useState('');
   const [climbDuration, setClimbDuration] = useState('60');
   const [recordApproach, setRecordApproach] = useState(false);
+  const [guideRoute, setGuideRoute] = useState(Array.isArray(navRoute?.params?.targetRoute) ? navRoute.params.targetRoute : null);
+  const [sourcePostId, setSourcePostId] = useState(navRoute?.params?.sourcePostId || null);
+
+  function clearGuide() {
+    setGuideRoute(null);
+    setSourcePostId(null);
+    navigation.setParams?.({ targetRoute: undefined, targetSportId: undefined, sourcePostId: undefined });
+  }
 
   useEffect(() => {
     supabase.from('sports').select('*').in('id', ACTIVITY_SPORTS).order('name').then(({ data }) => setSports(data || []));
-    AsyncStorage.getItem('@pista:last_gps_sport').then((value) => { if (value && ACTIVITY_SPORTS.includes(value)) setSportId(value); });
-  }, []);
+    AsyncStorage.getItem('@pista:last_gps_sport').then((value) => {
+      if (!navRoute?.params?.targetSportId && value && ACTIVITY_SPORTS.includes(value)) setSportId(value);
+    });
+  }, [navRoute?.params?.targetSportId]);
+
+  useEffect(() => {
+    const nextRoute = navRoute?.params?.targetRoute;
+    const nextSport = navRoute?.params?.targetSportId;
+    if (Array.isArray(nextRoute) && nextRoute.length >= 2) {
+      setGuideRoute(nextRoute);
+      setSourcePostId(navRoute?.params?.sourcePostId || null);
+      if (nextSport && ACTIVITY_SPORTS.includes(nextSport)) setSportId(nextSport);
+      setActivity(null);
+    }
+  }, [navRoute?.params?.sourcePostId, navRoute?.params?.targetRoute, navRoute?.params?.targetSportId]);
 
   const metrics = useMemo(() => {
     if (!activity) return null;
@@ -77,6 +100,7 @@ export default function RecordActivityScreen({ navigation }) {
         duration_sec: activity.durationSec, elevation_m: activity.elevationM || 0,
         pace_min_km: ['running', 'caminar', 'senderismo', 'trail'].includes(sportId) ? metrics.pace : null,
         avg_speed_kmh: ['ciclismo', 'patinaje'].includes(sportId) ? metrics.speed : null, hidden_ends: hideEnds,
+        repeated_from_post_id: guideRoute && sourcePostId ? sourcePostId : null,
       };
       const { error } = await supabase.from('posts').insert({
         author_id: user.id, sport_id: sportId, type: activity ? 'ruta' : 'progreso', caption: caption.trim() || null, details, audience,
@@ -88,6 +112,7 @@ export default function RecordActivityScreen({ navigation }) {
       ]);
       await Promise.all([checkStreakBadges(user.id), checkActivityBadges(user.id)]);
       setActivity(null);
+      clearGuide();
       setCaption('');
       setClimbRoutes(''); setClimbGrade(''); setClimbAttempts(''); setClimbVertical('');
       Alert.alert('Actividad guardada', 'El recorrido ya aparece en tu perfil y en el feed.');
@@ -105,12 +130,20 @@ export default function RecordActivityScreen({ navigation }) {
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sports}>
         {sports.map((sport) => (
-          <Pressable key={sport.id} style={[styles.sport, sportId === sport.id && styles.sportActive]} onPress={() => { setSportId(sport.id); setActivity(null); setRecordApproach(false); }}>
+          <Pressable key={sport.id} style={[styles.sport, sportId === sport.id && styles.sportActive]} onPress={() => { setSportId(sport.id); setActivity(null); setRecordApproach(false); clearGuide(); }}>
             <Ionicons name={iconFor(sport.id)} size={17} color={sportId === sport.id ? colors.bg : colors.textDim} />
             <Text style={[styles.sportText, sportId === sport.id && styles.sportTextActive]}>{sport.name}</Text>
           </Pressable>
         ))}
       </ScrollView>
+
+      {guideRoute && (
+        <View style={styles.guideBanner}>
+          <Ionicons name="map-outline" size={20} color={colors.accentStrong} />
+          <View style={{ flex: 1 }}><Text style={styles.guideTitle}>Ruta de referencia lista</Text><Text style={styles.hint}>Verás tu recorrido en verde y la ruta original en gris mientras grabas.</Text></View>
+          <Pressable accessibilityLabel="Quitar ruta de referencia" onPress={clearGuide}><Ionicons name="close" size={20} color={colors.textDim} /></Pressable>
+        </View>
+      )}
 
       <View style={styles.card}>
         {sportId === 'escalada' ? (
@@ -119,9 +152,9 @@ export default function RecordActivityScreen({ navigation }) {
             <Text style={styles.sectionLabel}>Tipo</Text><View style={styles.row}>{[['rocodromo','Rocódromo'],['roca','Roca'],['boulder','Boulder']].map(([id,label]) => <Choice key={id} active={climbType === id} label={label} onPress={() => setClimbType(id)} />)}</View>
             <View style={styles.climbGrid}><SmallInput label="Vías hechas" value={climbRoutes} onChangeText={setClimbRoutes} placeholder="6" /><SmallInput label="Grado máximo" value={climbGrade} onChangeText={setClimbGrade} placeholder="6b / V4" /><SmallInput label="Intentos" value={climbAttempts} onChangeText={setClimbAttempts} placeholder="10" /><SmallInput label="Altura total (m)" value={climbVertical} onChangeText={setClimbVertical} placeholder="120" /><SmallInput label="Duración (min)" value={climbDuration} onChangeText={setClimbDuration} placeholder="60" /></View>
             <Pressable style={styles.privacyRow} onPress={() => { setRecordApproach((value) => !value); setActivity(null); }}><Ionicons name="trail-sign-outline" size={20} color={recordApproach ? colors.accentStrong : colors.textDim} /><View style={{ flex: 1 }}><Text style={styles.privacyTitle}>Grabar aproximación GPS</Text><Text style={styles.hint}>Para escalada exterior: guarda el camino hasta la zona.</Text></View><Ionicons name={recordApproach ? 'checkbox' : 'square-outline'} size={20} color={colors.accentStrong} /></Pressable>
-            {recordApproach && <RouteRecorder onFinish={setActivity} />}
+            {recordApproach && <RouteRecorder onFinish={setActivity} targetRoute={guideRoute} />}
           </View>
-        ) : <><RouteRecorder onFinish={setActivity} />{!activity && <Text style={styles.hint}>Mantén Pista abierta durante esta primera versión del registro. La aplicación móvil permitirá grabar también con la pantalla bloqueada.</Text>}</>}
+        ) : <><RouteRecorder onFinish={setActivity} targetRoute={guideRoute} />{!activity && <Text style={styles.hint}>Mantén Pista abierta durante esta primera versión del registro. La aplicación móvil permitirá grabar también con la pantalla bloqueada.</Text>}</>}
       </View>
 
       {(activity || sportId === 'escalada') && (
@@ -156,6 +189,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, eyebrow: { color: colors.accentStrong, fontSize: 10, fontWeight: '900', letterSpacing: 1 }, title: { color: colors.text, fontSize: 22, fontWeight: '900', marginTop: 2 },
   sports: { gap: 8, paddingVertical: 2 }, sport: { flexDirection: 'row', gap: 6, alignItems: 'center', backgroundColor: colors.surface2, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 999 }, sportActive: { backgroundColor: colors.accent }, sportText: { color: colors.textDim, fontSize: 12, fontWeight: '700' }, sportTextActive: { color: colors.bg },
   card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 18, padding: 14, gap: 10 }, hint: { color: colors.textDim, fontSize: 11, lineHeight: 16 },
+  guideBanner: { flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.accent, borderRadius: 15, padding: 12 }, guideTitle: { color: colors.text, fontSize: 13, fontWeight: '900' },
   metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, metric: { width: '48%', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: 12 }, metricValue: { color: colors.text, fontSize: 17, fontWeight: '900' }, metricLabel: { color: colors.textDim, fontSize: 10, marginTop: 3 },
   input: { minHeight: 76, color: colors.text, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: 12, textAlignVertical: 'top' }, sectionLabel: { color: colors.textDim, fontSize: 11, fontWeight: '800', textTransform: 'uppercase' }, row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, choice: { backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 }, choiceActive: { backgroundColor: colors.accent }, choiceText: { color: colors.textDim, fontSize: 11, fontWeight: '700' }, choiceTextActive: { color: colors.bg },
   privacyRow: { flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: 12 }, privacyTitle: { color: colors.text, fontSize: 13, fontWeight: '800' },
