@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import SportLoader from '../components/SportLoader';
@@ -12,7 +12,7 @@ import PostCard from '../components/PostCard';
 import Avatar from '../components/Avatar';
 import HighlightsRow from '../components/HighlightsRow';
 
-const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position), comments(count)';
+const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position, media_type), comments(count)';
 
 export default function UserProfileScreen({ route, navigation }) {
   const { profileId } = route.params;
@@ -24,18 +24,21 @@ export default function UserProfileScreen({ route, navigation }) {
   const [counts, setCounts] = useState({ followers: 0, following: 0 });
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [muted, setMuted] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [{ data: profileRow }, { data: badgeRows }, followersRes, followingRes] = await Promise.all([
+    const [{ data: profileRow }, { data: badgeRows }, followersRes, followingRes, muteRes] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', profileId).maybeSingle(),
       supabase.from('profile_badges').select('badge_id, badges(*)').eq('profile_id', profileId),
       supabase.from('follows').select('follower_id', { count: 'exact', head: true }).eq('following_id', profileId).eq('pending', false),
       supabase.from('follows').select('following_id', { count: 'exact', head: true }).eq('follower_id', profileId).eq('pending', false),
+      user ? supabase.from('mutes').select('mute_posts, mute_stories').eq('owner_id', user.id).eq('muted_id', profileId).maybeSingle() : Promise.resolve({ data: null }),
     ]);
     setProfile(profileRow || null);
     setBadges((badgeRows || []).map((b) => b.badges).filter(Boolean));
     setCounts({ followers: followersRes.count || 0, following: followingRes.count || 0 });
+    setMuted(!!(muteRes.data?.mute_posts || muteRes.data?.mute_stories));
 
     let following = false;
     if (user) {
@@ -75,6 +78,20 @@ export default function UserProfileScreen({ route, navigation }) {
       await supabase.from('likes').insert({ post_id: post.id, profile_id: user.id });
       setLikedIds((m) => ({ ...m, [post.id]: true }));
     }
+  }
+
+  async function toggleMute() {
+    if (!user || isMine) return;
+    if (muted) await supabase.from('mutes').delete().eq('owner_id', user.id).eq('muted_id', profileId);
+    else await supabase.from('mutes').upsert({ owner_id: user.id, muted_id: profileId, mute_posts: true, mute_stories: true }, { onConflict: 'owner_id,muted_id' });
+    setMuted((value) => !value);
+  }
+
+  function confirmBlock() {
+    Alert.alert('Bloquear perfil', `Dejaréis de veros y no podrá escribirte.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Bloquear', style: 'destructive', onPress: async () => { const { error } = await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: profileId }); if (error) Alert.alert('No se pudo bloquear', error.message); else navigation.goBack(); } },
+    ]);
   }
 
   if (loading) {
@@ -132,6 +149,8 @@ export default function UserProfileScreen({ route, navigation }) {
           <View style={styles.actionsRow}>
             <FollowButton profileId={profile.id} isPrivate={profile.is_private} />
             <MessageButton profileId={profile.id} profileName={profile.display_name || profile.username} />
+            {!isMine && <Pressable accessibilityLabel="Silenciar perfil" style={[styles.roundAction, muted && styles.roundActionActive]} onPress={toggleMute}><Ionicons name={muted ? 'volume-mute' : 'volume-mute-outline'} size={17} color={muted ? colors.bg : colors.textDim} /></Pressable>}
+            {!isMine && <Pressable accessibilityLabel="Bloquear perfil" style={styles.roundAction} onPress={confirmBlock}><Ionicons name="ban-outline" size={17} color={colors.clay} /></Pressable>}
           </View>
 
           <HighlightsRow profileId={profile.id} isMine={isMine} navigation={navigation} />
@@ -164,6 +183,8 @@ const styles = StyleSheet.create({
   bio: { color: colors.text, fontSize: 13, textAlign: 'center', paddingHorizontal: 24, marginTop: 6 },
   statsRow: { flexDirection: 'row', gap: 24, marginTop: 12, marginBottom: 4 },
   actionsRow: { flexDirection: 'row', gap: 10 },
+  roundAction: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' },
+  roundActionActive: { backgroundColor: colors.accent },
   stat: { alignItems: 'center' },
   statValue: { color: colors.text, fontWeight: '800', fontSize: 16 },
   statLabel: { color: colors.textDim, fontSize: 11 },

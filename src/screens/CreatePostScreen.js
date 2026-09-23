@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
 import { checkFirstPostBadge } from '../lib/awardBadges';
 import RouteRecorder from '../components/RouteRecorder';
+import VideoPlayer from '../components/VideoPlayer';
 import { colors } from '../lib/theme';
 
 const TYPES = [
@@ -22,6 +23,8 @@ const TYPES = [
 // Añadir un deporte nuevo a esta lista es lo único que hace falta para que
 // también pida estos campos - el resto (BD, feed, tarjeta) ya lo soporta.
 const ROUTE_SPORTS = ['running', 'ciclismo'];
+const STRENGTH_SPORTS = ['gym', 'calistenia', 'crossfit', 'escalada'];
+const MATCH_SPORTS = ['padel', 'tenis', 'futbol'];
 
 export default function CreatePostScreen({ navigation, route: navRoute }) {
   const { user, sportIds } = useAuth();
@@ -32,8 +35,17 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
   const [distanceKm, setDistanceKm] = useState('');
   const [durationMin, setDurationMin] = useState('');
   const [elevationM, setElevationM] = useState('');
+  const [exercise, setExercise] = useState('');
+  const [sets, setSets] = useState('');
+  const [reps, setReps] = useState('');
+  const [weightKg, setWeightKg] = useState('');
+  const [workoutDuration, setWorkoutDuration] = useState('');
+  const [distanceM, setDistanceM] = useState('');
+  const [score, setScore] = useState('');
   const [route, setRoute] = useState(null);
   const [images, setImages] = useState([]);
+  const [video, setVideo] = useState(null);
+  const [audience, setAudience] = useState('public');
   const [saving, setSaving] = useState(false);
 
   const [place, setPlace] = useState(navRoute?.params?.presetPlace || null);
@@ -91,8 +103,27 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
       selectionLimit: MAX_PHOTOS,
     });
     if (!result.canceled) {
+      setVideo(null);
       setImages((prev) => [...prev, ...result.assets].slice(0, MAX_PHOTOS));
     }
+  }
+
+  async function pickVideo() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      videoMaxDuration: 60,
+      quality: 0.7,
+    });
+    if (result.canceled) return;
+    const selected = result.assets[0];
+    if (selected.duration && selected.duration > 60000) {
+      Alert.alert('Vídeo demasiado largo', 'Elige un vídeo de hasta 60 segundos.');
+      return;
+    }
+    setImages([]);
+    setVideo(selected);
   }
 
   function removeImage(idx) {
@@ -111,10 +142,26 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
         if (route) details.route = route;
       }
       if (type === 'resena' && rating) details.rating = rating;
+      if (STRENGTH_SPORTS.includes(sportId)) {
+        if (exercise.trim()) details.exercise = exercise.trim();
+        if (sets) details.sets = Number(sets);
+        if (reps) details.reps = Number(reps);
+        if (weightKg) details.weight_kg = Number(weightKg);
+        if (workoutDuration) details.workout_duration_min = Number(workoutDuration);
+      }
+      if (sportId === 'natacion') {
+        if (distanceM) details.distance_m = Number(distanceM);
+        if (workoutDuration) details.workout_duration_min = Number(workoutDuration);
+      }
+      if (MATCH_SPORTS.includes(sportId)) {
+        if (score.trim()) details.score = score.trim();
+        if (workoutDuration) details.workout_duration_min = Number(workoutDuration);
+      }
+      if (['yoga', 'surf', 'esqui'].includes(sportId) && workoutDuration) details.workout_duration_min = Number(workoutDuration);
 
       const { data: post, error } = await supabase
         .from('posts')
-        .insert({ author_id: user.id, sport_id: sportId, type, caption, details, place_id: type === 'resena' ? place?.id || null : null })
+        .insert({ author_id: user.id, sport_id: sportId, type, caption, details, audience, place_id: type === 'resena' ? place?.id || null : null })
         .select()
         .single();
       if (error) throw error;
@@ -128,8 +175,19 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
         const { error: uploadError } = await supabase.storage.from('media').upload(path, blob, { contentType: img.mimeType || 'image/jpeg' });
         if (!uploadError) {
           const { data: pub } = supabase.storage.from('media').getPublicUrl(path);
-          await supabase.from('post_media').insert({ post_id: post.id, url: pub.publicUrl, position: i });
+          await supabase.from('post_media').insert({ post_id: post.id, url: pub.publicUrl, position: i, media_type: 'image' });
         }
+      }
+
+      if (video) {
+        const ext = video.uri.split('.').pop().split('?')[0] || 'mp4';
+        const path = `${user.id}/${post.id}_video.${ext}`;
+        const response = await fetch(video.uri);
+        const blob = await response.blob();
+        const { error: uploadError } = await supabase.storage.from('media').upload(path, blob, { contentType: video.mimeType || 'video/mp4' });
+        if (uploadError) throw uploadError;
+        const { data: pub } = supabase.storage.from('media').getPublicUrl(path);
+        await supabase.from('post_media').insert({ post_id: post.id, url: pub.publicUrl, position: 0, media_type: 'video' });
       }
 
       await checkFirstPostBadge(user.id);
@@ -217,7 +275,33 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
         </Field>
       )}
 
-      <Field label={`Fotos (opcional, hasta ${MAX_PHOTOS})`}>
+      {STRENGTH_SPORTS.includes(sportId) && type !== 'resena' && (
+        <Field label="Datos del entrenamiento">
+          <TextInput style={styles.input} placeholder="Ejercicio o sesión" placeholderTextColor={colors.textDim} value={exercise} onChangeText={setExercise} />
+          <View style={styles.compactRow}>
+            <TextInput style={styles.compactInput} placeholder="Series" placeholderTextColor={colors.textDim} keyboardType="numeric" value={sets} onChangeText={setSets} />
+            <TextInput style={styles.compactInput} placeholder="Reps" placeholderTextColor={colors.textDim} keyboardType="numeric" value={reps} onChangeText={setReps} />
+            <TextInput style={styles.compactInput} placeholder="Peso kg" placeholderTextColor={colors.textDim} keyboardType="numeric" value={weightKg} onChangeText={setWeightKg} />
+            <TextInput style={styles.compactInput} placeholder="Min" placeholderTextColor={colors.textDim} keyboardType="numeric" value={workoutDuration} onChangeText={setWorkoutDuration} />
+          </View>
+        </Field>
+      )}
+
+      {sportId === 'natacion' && type !== 'resena' && (
+        <Field label="Datos de natación"><View style={styles.compactRow}><TextInput style={styles.compactInput} placeholder="Metros" placeholderTextColor={colors.textDim} keyboardType="numeric" value={distanceM} onChangeText={setDistanceM} /><TextInput style={styles.compactInput} placeholder="Minutos" placeholderTextColor={colors.textDim} keyboardType="numeric" value={workoutDuration} onChangeText={setWorkoutDuration} /></View></Field>
+      )}
+
+      {MATCH_SPORTS.includes(sportId) && type !== 'resena' && (
+        <Field label="Datos del partido"><View style={styles.compactRow}><TextInput style={styles.compactInput} placeholder="Resultado" placeholderTextColor={colors.textDim} value={score} onChangeText={setScore} /><TextInput style={styles.compactInput} placeholder="Minutos" placeholderTextColor={colors.textDim} keyboardType="numeric" value={workoutDuration} onChangeText={setWorkoutDuration} /></View></Field>
+      )}
+
+      <Field label="Contenido (opcional)">
+        {video && (
+          <View style={{ gap: 8 }}>
+            <VideoPlayer uri={video.uri} style={{ maxHeight: 460 }} controls loop={false} />
+            <Pressable style={styles.secondaryBtn} onPress={() => setVideo(null)}><Ionicons name="trash-outline" size={16} color={colors.clay} /><Text style={[styles.secondaryBtnText, { color: colors.clay }]}>Quitar vídeo</Text></Pressable>
+          </View>
+        )}
         {images.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -232,17 +316,23 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
             </View>
           </ScrollView>
         )}
-        {images.length < MAX_PHOTOS && (
-          <Pressable style={styles.imagePicker} onPress={pickImage}>
-            <Ionicons name="camera-outline" size={22} color={colors.textDim} />
-            <Text style={styles.imagePickerText}>Toca para elegir {images.length > 0 ? 'más fotos' : 'una foto'}</Text>
-          </Pressable>
+        {!video && images.length < MAX_PHOTOS && (
+          <View style={styles.mediaButtons}>
+            <Pressable style={styles.mediaButton} onPress={pickImage}><Ionicons name="images-outline" size={22} color={colors.accentStrong} /><Text style={styles.imagePickerText}>{images.length ? 'Más fotos' : 'Fotos'}</Text></Pressable>
+            {!images.length && <Pressable style={styles.mediaButton} onPress={pickVideo}><Ionicons name="videocam-outline" size={22} color={colors.accentStrong} /><Text style={styles.imagePickerText}>Vídeo · 60 s</Text></Pressable>}
+          </View>
         )}
       </Field>
 
       <Field label="Descripción">
         <TextInput style={[styles.input, styles.textarea]} placeholder="Cuenta cómo te ha ido…" placeholderTextColor={colors.textDim}
           value={caption} onChangeText={setCaption} multiline />
+      </Field>
+
+      <Field label="Quién puede verlo">
+        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+          {[['public','Todo el mundo'],['followers','Seguidores'],['private','Solo yo']].map(([id, label]) => <Chip key={id} active={audience === id} onPress={() => setAudience(id)} label={label} />)}
+        </View>
       </Field>
 
       <Pressable style={styles.btnPrimary} onPress={handleSave} disabled={saving || !sportId}>
@@ -279,6 +369,8 @@ const styles = StyleSheet.create({
     borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14,
   },
   textarea: { minHeight: 80, textAlignVertical: 'top' },
+  compactRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  compactInput: { flexGrow: 1, minWidth: 76, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, color: colors.text, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 10, fontSize: 13 },
   hint: { color: colors.textDim, fontSize: 11 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   chipActive: { backgroundColor: colors.accent },
@@ -290,6 +382,8 @@ const styles = StyleSheet.create({
   placeResultRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
   placeResultText: { color: colors.text, fontSize: 13 },
   imagePicker: { height: 140, borderRadius: 14, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center', gap: 6, overflow: 'hidden' },
+  mediaButtons: { flexDirection: 'row', gap: 10 },
+  mediaButton: { flex: 1, minHeight: 96, borderRadius: 14, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center', gap: 7 },
   imagePickerText: { color: colors.textDim, fontSize: 13 },
   thumbWrap: { width: 84, height: 84, borderRadius: 12, overflow: 'hidden', backgroundColor: colors.surface2 },
   thumb: { width: '100%', height: '100%' },

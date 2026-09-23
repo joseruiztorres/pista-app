@@ -49,6 +49,10 @@ export default function ProfileScreen({ navigation }) {
           <Ionicons name="create-outline" size={14} color={colors.accentStrong} />
           <Text style={styles.editBtnText}>Editar perfil</Text>
         </Pressable>
+        <Pressable style={styles.editBtn} onPress={() => navigation.navigate('StoryPrivacy')}>
+          <Ionicons name="shield-checkmark-outline" size={14} color={colors.accentStrong} />
+          <Text style={styles.editBtnText}>Historias</Text>
+        </Pressable>
         {profile?.is_private && (
           <Pressable style={styles.editBtn} onPress={() => navigation.navigate('FollowRequests')}>
             <Ionicons name="person-add-outline" size={14} color={colors.accentStrong} />

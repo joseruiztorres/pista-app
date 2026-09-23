@@ -8,7 +8,7 @@ import { colors } from '../lib/theme';
 import Avatar from '../components/Avatar';
 import FollowButton from '../components/FollowButton';
 
-export default function SearchScreen({ navigation }) {
+export default function SearchScreen({ navigation, embedded = false }) {
   const { user, sportIds } = useAuth();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -77,7 +77,7 @@ export default function SearchScreen({ navigation }) {
           placeholderTextColor={colors.textDim}
           value={query}
           onChangeText={setQuery}
-          autoFocus
+          autoFocus={!embedded}
         />
       </View>
 
@@ -113,7 +113,7 @@ export default function SearchScreen({ navigation }) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   searchWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginTop: 12, marginBottom: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginTop: 10, marginBottom: 8,
     backgroundColor: colors.surface, borderRadius: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.line,
   },
   searchInput: { flex: 1, color: colors.text, paddingVertical: 10, fontSize: 14 },

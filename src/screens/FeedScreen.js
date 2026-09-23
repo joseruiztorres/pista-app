@@ -10,7 +10,7 @@ import SportLoader from '../components/SportLoader';
 import StoriesBar from '../components/StoriesBar';
 import { colors } from '../lib/theme';
 
-const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position), comments(count), place:place_id(name)';
+const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position, media_type), comments(count), place:place_id(name)';
 const PAGE_SIZE = 15;
 
 export default function FeedScreen({ navigation }) {
@@ -86,8 +86,12 @@ export default function FeedScreen({ navigation }) {
       if (!followingIdsRef.current.length) { setPosts([]); setHasMore(false); return; }
     }
 
-    const data = await fetchPage(0);
-    setPosts(data);
+    const [data, mutedResult] = await Promise.all([
+      fetchPage(0),
+      user ? supabase.from('mutes').select('muted_id').eq('owner_id', user.id).eq('mute_posts', true) : Promise.resolve({ data: [] }),
+    ]);
+    const mutedIds = new Set((mutedResult.data || []).map((row) => row.muted_id));
+    setPosts(data.filter((post) => !mutedIds.has(post.author_id)));
     setHasMore(data.length === PAGE_SIZE);
     pageRef.current = 1;
 
@@ -127,11 +131,11 @@ export default function FeedScreen({ navigation }) {
       <View style={styles.topbar}>
         <Text style={styles.wordmark}>PISTA</Text>
         <View style={styles.topbarActions}>
-          <Pressable style={styles.bellWrap} onPress={() => navigation.navigate('Search')}>
-            <Ionicons name="search-outline" size={21} color={colors.text} />
+          <Pressable style={styles.bellWrap} onPress={() => navigation.navigate('Challenges')}>
+            <Ionicons name="trophy-outline" size={21} color={colors.text} />
           </Pressable>
-          <Pressable style={styles.bellWrap} onPress={() => navigation.navigate('Places')}>
-            <Ionicons name="location-outline" size={22} color={colors.text} />
+          <Pressable style={styles.bellWrap} onPress={() => navigation.navigate('Messages')}>
+            <Ionicons name="chatbubble-ellipses-outline" size={21} color={colors.text} />
           </Pressable>
           <Pressable style={styles.bellWrap} onPress={() => navigation.navigate('Notifications')}>
             <Ionicons name="notifications-outline" size={22} color={colors.text} />
@@ -141,7 +145,7 @@ export default function FeedScreen({ navigation }) {
               </View>
             )}
           </Pressable>
-          <Pressable style={styles.fab} onPress={() => navigation.navigate('CrearPost')}>
+          <Pressable style={styles.fab} onPress={() => navigation.navigate('CreateMenu')}>
             <Ionicons name="add" size={22} color={colors.bg} />
           </Pressable>
         </View>
@@ -175,7 +179,7 @@ export default function FeedScreen({ navigation }) {
             <Text style={styles.empty}>
               {filter === 'siguiendo' ? 'Todavía no sigues a nadie con publicaciones.' : 'Todavía no hay publicaciones. ¡Sé el primero!'}
             </Text>
-            <Pressable style={styles.discoverBtn} onPress={() => navigation.navigate('Search')}>
+            <Pressable style={styles.discoverBtn} onPress={() => navigation.navigate('Explorar')}>
               <Ionicons name="people-outline" size={16} color={colors.bg} />
               <Text style={styles.discoverBtnText}>Descubrir personas</Text>
             </Pressable>

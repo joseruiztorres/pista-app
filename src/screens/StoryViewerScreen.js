@@ -5,8 +5,9 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import Avatar from '../components/Avatar';
 import { colors } from '../lib/theme';
+import VideoPlayer from '../components/VideoPlayer';
 
-const STORY_FIELDS = 'id, author_id, media_url, caption, created_at, expires_at, profiles:author_id(id, username, display_name, avatar_url)';
+const STORY_FIELDS = 'id, author_id, media_url, media_type, audience, caption, created_at, expires_at, profiles:author_id(id, username, display_name, avatar_url)';
 
 export default function StoryViewerScreen({ route, navigation }) {
   const { authorId, highlightId } = route.params || {};
@@ -84,6 +85,13 @@ export default function StoryViewerScreen({ route, navigation }) {
     ]);
   }
 
+  async function muteStories() {
+    const { data: current } = await supabase.from('mutes').select('mute_posts').eq('owner_id', user.id).eq('muted_id', story.author_id).maybeSingle();
+    const { error } = await supabase.from('mutes').upsert({ owner_id: user.id, muted_id: story.author_id, mute_posts: !!current?.mute_posts, mute_stories: true }, { onConflict: 'owner_id,muted_id' });
+    if (error) Alert.alert('No se pudo silenciar', error.message);
+    else navigation.goBack();
+  }
+
   if (loading) {
     return <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>;
   }
@@ -103,7 +111,9 @@ export default function StoryViewerScreen({ route, navigation }) {
 
   return (
     <View style={styles.screen}>
-      <Image source={{ uri: story.media_url }} style={styles.media} resizeMode="contain" />
+      {story.media_type === 'video'
+        ? <VideoPlayer uri={story.media_url} style={styles.media} autoplay controls={false} loop={false} />
+        : <Image source={{ uri: story.media_url }} style={styles.media} resizeMode="contain" />}
       <View style={styles.scrimTop} />
       <View style={styles.scrimBottom} />
 
@@ -122,6 +132,11 @@ export default function StoryViewerScreen({ route, navigation }) {
         {isMine && (
           <Pressable accessibilityLabel="Eliminar historia" hitSlop={10} onPress={confirmDelete}>
             <Ionicons name="trash-outline" size={20} color={colors.text} />
+          </Pressable>
+        )}
+        {!isMine && (
+          <Pressable accessibilityLabel="Silenciar historias" hitSlop={10} onPress={muteStories}>
+            <Ionicons name="volume-mute-outline" size={21} color={colors.text} />
           </Pressable>
         )}
         <Pressable accessibilityLabel="Cerrar historia" hitSlop={10} onPress={() => navigation.goBack()}>
@@ -165,7 +180,7 @@ const styles = StyleSheet.create({
   empty: { color: colors.textDim, textAlign: 'center' },
   backButton: { backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 22, paddingVertical: 11 },
   backText: { color: colors.bg, fontWeight: '800' },
-  media: { width: '100%', height: '100%' },
+  media: { width: '100%', height: '100%', aspectRatio: undefined, borderWidth: 0, borderRadius: 0 },
   scrimTop: { position: 'absolute', left: 0, right: 0, top: 0, height: 150, backgroundColor: 'rgba(0,0,0,0.28)' },
   scrimBottom: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 190, backgroundColor: 'rgba(0,0,0,0.34)' },
   progressRow: { position: 'absolute', top: 12, left: 12, right: 12, flexDirection: 'row', gap: 4 },

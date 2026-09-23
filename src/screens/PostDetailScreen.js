@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthProvider';
 import { colors } from '../lib/theme';
 import PostCard from '../components/PostCard';
 
-const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position), comments(count)';
+const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position, media_type), comments(count)';
 
 export default function PostDetailScreen({ route, navigation }) {
   const { postId } = route.params;

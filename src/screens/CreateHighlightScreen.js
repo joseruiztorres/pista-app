@@ -16,7 +16,7 @@ export default function CreateHighlightScreen({ route, navigation }) {
 
   useEffect(() => {
     let active = true;
-    supabase.from('stories').select('id, media_url, caption, created_at')
+    supabase.from('stories').select('id, media_url, media_type, caption, created_at')
       .eq('author_id', user.id)
       .order('created_at', { ascending: false })
       .then(({ data }) => {
@@ -51,7 +51,7 @@ export default function CreateHighlightScreen({ route, navigation }) {
       const { data: highlight, error } = await supabase.from('highlights').insert({
         owner_id: user.id,
         title: title.trim(),
-        cover_url: selectedStories[0]?.media_url || null,
+        cover_url: selectedStories[0]?.media_type === 'video' ? null : selectedStories[0]?.media_url || null,
       }).select().single();
       if (error) throw error;
 
@@ -97,7 +97,9 @@ export default function CreateHighlightScreen({ route, navigation }) {
             const active = selected.includes(story.id);
             return (
               <Pressable key={story.id} style={[styles.story, active && styles.storyActive]} onPress={() => toggle(story.id)}>
-                <Image source={{ uri: story.media_url }} style={styles.storyImage} />
+                {story.media_type === 'video'
+                  ? <View style={[styles.storyImage, styles.videoPlaceholder]}><Ionicons name="play-circle" size={30} color={colors.text} /></View>
+                  : <Image source={{ uri: story.media_url }} style={styles.storyImage} />}
                 <View style={[styles.check, active && styles.checkActive]}>
                   {active && <Ionicons name="checkmark" size={14} color={colors.bg} />}
                 </View>
@@ -138,6 +140,7 @@ const styles = StyleSheet.create({
   story: { width: '31.5%', aspectRatio: 0.72, borderRadius: 13, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent', backgroundColor: colors.surface },
   storyActive: { borderColor: colors.accent },
   storyImage: { width: '100%', height: '100%' },
+  videoPlaceholder: { backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' },
   check: { position: 'absolute', top: 7, right: 7, width: 23, height: 23, borderRadius: 12, borderWidth: 2, borderColor: colors.text, backgroundColor: 'rgba(0,0,0,0.25)', alignItems: 'center', justifyContent: 'center' },
   checkActive: { backgroundColor: colors.accent, borderColor: colors.accent },
   date: { position: 'absolute', left: 6, bottom: 6, color: colors.text, fontSize: 9, fontWeight: '800', backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 3 },
