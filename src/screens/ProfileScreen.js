@@ -73,16 +73,28 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.stat}><Text style={styles.statValue}>{counts.posts}</Text><Text style={styles.statLabel}>Publicaciones</Text></View>
       </View>
 
-      <View style={styles.progressCard}>
+      <Pressable style={styles.progressCard} onPress={() => navigation.navigate('Progress')}>
         <View style={styles.progressTitleRow}>
           <Ionicons name="pulse-outline" size={17} color={colors.accentStrong} />
           <Text style={styles.progressTitle}>Tu progreso</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.textDim} />
         </View>
         <View style={styles.progressStats}>
           <View style={styles.progressStat}><Text style={styles.progressValue}>{progress.streak}</Text><Text style={styles.progressLabel}>días de racha</Text></View>
           <View style={styles.progressStat}><Text style={styles.progressValue}>{progress.week}/7</Text><Text style={styles.progressLabel}>esta semana</Text></View>
           <View style={styles.progressStat}><Text style={styles.progressValue}>{progress.meetups}</Text><Text style={styles.progressLabel}>quedadas</Text></View>
         </View>
+      </Pressable>
+
+      <View style={styles.quickRow}>
+        <Pressable style={styles.quickAction} onPress={() => navigation.navigate('Challenges')}>
+          <Ionicons name="trophy-outline" size={18} color={colors.amber} />
+          <Text style={styles.quickText}>Retos y medallas</Text>
+        </Pressable>
+        <Pressable style={styles.quickAction} onPress={() => navigation.navigate('TrainingCalendar')}>
+          <Ionicons name="calendar-outline" size={18} color={colors.accentStrong} />
+          <Text style={styles.quickText}>Calendario</Text>
+        </Pressable>
       </View>
 
       <HighlightsRow profileId={user?.id} isMine navigation={navigation} />
@@ -126,6 +138,9 @@ const styles = StyleSheet.create({
   progressStat: { alignItems: 'center', flex: 1 },
   progressValue: { color: colors.accentStrong, fontSize: 18, fontWeight: '900' },
   progressLabel: { color: colors.textDim, fontSize: 10, marginTop: 2 },
+  quickRow: { width: '100%', flexDirection: 'row', gap: 8, marginTop: 2 },
+  quickAction: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, paddingVertical: 11 },
+  quickText: { color: colors.text, fontSize: 11, fontWeight: '800' },
   badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 18, paddingHorizontal: 24 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   badgeText: { color: colors.textDim, fontSize: 11, fontWeight: '600' },

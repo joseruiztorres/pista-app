@@ -8,8 +8,9 @@ import { iconFor } from '../lib/sports';
 import { haversineKm } from '../lib/geo';
 import RouteRecorder from '../components/RouteRecorder';
 import { colors } from '../lib/theme';
+import { checkActivityBadges, checkStreakBadges } from '../lib/awardBadges';
 
-const GPS_SPORTS = ['running', 'ciclismo', 'caminar', 'senderismo', 'trail', 'patinaje'];
+const ACTIVITY_SPORTS = ['running', 'ciclismo', 'caminar', 'senderismo', 'trail', 'patinaje', 'escalada'];
 
 function cropRoute(route, meters = 200) {
   if (!route || route.length < 3) return route;
@@ -37,10 +38,17 @@ export default function RecordActivityScreen({ navigation }) {
   const [audience, setAudience] = useState('public');
   const [hideEnds, setHideEnds] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [climbType, setClimbType] = useState('rocodromo');
+  const [climbRoutes, setClimbRoutes] = useState('');
+  const [climbGrade, setClimbGrade] = useState('');
+  const [climbAttempts, setClimbAttempts] = useState('');
+  const [climbVertical, setClimbVertical] = useState('');
+  const [climbDuration, setClimbDuration] = useState('60');
+  const [recordApproach, setRecordApproach] = useState(false);
 
   useEffect(() => {
-    supabase.from('sports').select('*').in('id', GPS_SPORTS).order('name').then(({ data }) => setSports(data || []));
-    AsyncStorage.getItem('@pista:last_gps_sport').then((value) => { if (value && GPS_SPORTS.includes(value)) setSportId(value); });
+    supabase.from('sports').select('*').in('id', ACTIVITY_SPORTS).order('name').then(({ data }) => setSports(data || []));
+    AsyncStorage.getItem('@pista:last_gps_sport').then((value) => { if (value && ACTIVITY_SPORTS.includes(value)) setSportId(value); });
   }, []);
 
   const metrics = useMemo(() => {
@@ -54,30 +62,34 @@ export default function RecordActivityScreen({ navigation }) {
   }, [activity]);
 
   async function publish() {
-    if (!activity || !user || saving) return;
+    const isClimbing = sportId === 'escalada';
+    if ((!activity && !isClimbing) || (isClimbing && recordApproach && !activity) || !user || saving) return;
     setSaving(true);
     try {
-      const publicRoute = hideEnds ? cropRoute(activity.route) : activity.route;
-      const details = {
-        route: publicRoute,
-        distance_km: Number(activity.distanceKm.toFixed(2)),
-        duration_min: Math.max(1, Math.round(activity.durationSec / 60)),
-        duration_sec: activity.durationSec,
-        elevation_m: activity.elevationM || 0,
-        pace_min_km: sportId === 'running' || sportId === 'caminar' || sportId === 'senderismo' || sportId === 'trail' ? metrics.pace : null,
-        avg_speed_kmh: sportId === 'ciclismo' || sportId === 'patinaje' ? metrics.speed : null,
-        hidden_ends: hideEnds,
+      const publicRoute = activity ? (hideEnds ? cropRoute(activity.route) : activity.route) : null;
+      const details = isClimbing ? {
+        activity_kind: 'climbing', climb_type: climbType, routes_completed: Number(climbRoutes || 0), highest_grade: climbGrade.trim() || null,
+        attempts: Number(climbAttempts || 0), vertical_m: Number(climbVertical || 0), duration_min: Number(climbDuration || 0),
+        route: publicRoute, approach_distance_km: activity ? Number(activity.distanceKm.toFixed(2)) : null,
+        approach_duration_min: activity ? Math.max(1, Math.round(activity.durationSec / 60)) : null, hidden_ends: activity ? hideEnds : false,
+      } : {
+        route: publicRoute, distance_km: Number(activity.distanceKm.toFixed(2)), duration_min: Math.max(1, Math.round(activity.durationSec / 60)),
+        duration_sec: activity.durationSec, elevation_m: activity.elevationM || 0,
+        pace_min_km: ['running', 'caminar', 'senderismo', 'trail'].includes(sportId) ? metrics.pace : null,
+        avg_speed_kmh: ['ciclismo', 'patinaje'].includes(sportId) ? metrics.speed : null, hidden_ends: hideEnds,
       };
       const { error } = await supabase.from('posts').insert({
-        author_id: user.id, sport_id: sportId, type: 'ruta', caption: caption.trim() || null, details, audience,
+        author_id: user.id, sport_id: sportId, type: activity ? 'ruta' : 'progreso', caption: caption.trim() || null, details, audience,
       });
       if (error) throw error;
       await Promise.all([
         AsyncStorage.setItem('@pista:last_gps_sport', sportId),
         supabase.from('daily_checkins').upsert({ profile_id: user.id, sport_id: sportId, check_date: new Date().toISOString().slice(0, 10) }, { onConflict: 'profile_id,check_date' }),
       ]);
+      await Promise.all([checkStreakBadges(user.id), checkActivityBadges(user.id)]);
       setActivity(null);
       setCaption('');
+      setClimbRoutes(''); setClimbGrade(''); setClimbAttempts(''); setClimbVertical('');
       Alert.alert('Actividad guardada', 'El recorrido ya aparece en tu perfil y en el feed.');
       navigation.navigate('Inicio');
     } catch (error) {
@@ -93,7 +105,7 @@ export default function RecordActivityScreen({ navigation }) {
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sports}>
         {sports.map((sport) => (
-          <Pressable key={sport.id} style={[styles.sport, sportId === sport.id && styles.sportActive]} onPress={() => { setSportId(sport.id); setActivity(null); }}>
+          <Pressable key={sport.id} style={[styles.sport, sportId === sport.id && styles.sportActive]} onPress={() => { setSportId(sport.id); setActivity(null); setRecordApproach(false); }}>
             <Ionicons name={iconFor(sport.id)} size={17} color={sportId === sport.id ? colors.bg : colors.textDim} />
             <Text style={[styles.sportText, sportId === sport.id && styles.sportTextActive]}>{sport.name}</Text>
           </Pressable>
@@ -101,27 +113,34 @@ export default function RecordActivityScreen({ navigation }) {
       </ScrollView>
 
       <View style={styles.card}>
-        <RouteRecorder onFinish={setActivity} />
-        {!activity && <Text style={styles.hint}>Mantén Pista abierta durante esta primera versión del registro. La aplicación móvil permitirá grabar también con la pantalla bloqueada.</Text>}
+        {sportId === 'escalada' ? (
+          <View style={styles.climbForm}>
+            <View style={styles.climbIntro}><Ionicons name="trending-up" size={22} color={colors.amber} /><View style={{ flex: 1 }}><Text style={styles.climbTitle}>Sesión de escalada</Text><Text style={styles.hint}>Registra vías, grado y altura. El GPS puede guardar la aproximación exterior.</Text></View></View>
+            <Text style={styles.sectionLabel}>Tipo</Text><View style={styles.row}>{[['rocodromo','Rocódromo'],['roca','Roca'],['boulder','Boulder']].map(([id,label]) => <Choice key={id} active={climbType === id} label={label} onPress={() => setClimbType(id)} />)}</View>
+            <View style={styles.climbGrid}><SmallInput label="Vías hechas" value={climbRoutes} onChangeText={setClimbRoutes} placeholder="6" /><SmallInput label="Grado máximo" value={climbGrade} onChangeText={setClimbGrade} placeholder="6b / V4" /><SmallInput label="Intentos" value={climbAttempts} onChangeText={setClimbAttempts} placeholder="10" /><SmallInput label="Altura total (m)" value={climbVertical} onChangeText={setClimbVertical} placeholder="120" /><SmallInput label="Duración (min)" value={climbDuration} onChangeText={setClimbDuration} placeholder="60" /></View>
+            <Pressable style={styles.privacyRow} onPress={() => { setRecordApproach((value) => !value); setActivity(null); }}><Ionicons name="trail-sign-outline" size={20} color={recordApproach ? colors.accentStrong : colors.textDim} /><View style={{ flex: 1 }}><Text style={styles.privacyTitle}>Grabar aproximación GPS</Text><Text style={styles.hint}>Para escalada exterior: guarda el camino hasta la zona.</Text></View><Ionicons name={recordApproach ? 'checkbox' : 'square-outline'} size={20} color={colors.accentStrong} /></Pressable>
+            {recordApproach && <RouteRecorder onFinish={setActivity} />}
+          </View>
+        ) : <><RouteRecorder onFinish={setActivity} />{!activity && <Text style={styles.hint}>Mantén Pista abierta durante esta primera versión del registro. La aplicación móvil permitirá grabar también con la pantalla bloqueada.</Text>}</>}
       </View>
 
-      {activity && (
+      {(activity || sportId === 'escalada') && (
         <>
-          <View style={styles.metrics}>
+          {activity && <View style={styles.metrics}>
             <Metric value={`${activity.distanceKm.toFixed(2)} km`} label="Distancia" />
             <Metric value={`${Math.round(activity.durationSec / 60)} min`} label="Tiempo" />
-            <Metric value={sportId === 'ciclismo' || sportId === 'patinaje' ? metrics.speed : metrics.pace} label={sportId === 'ciclismo' || sportId === 'patinaje' ? 'Velocidad' : 'Ritmo'} />
+            <Metric value={sportId === 'escalada' ? 'Aproximación' : sportId === 'ciclismo' || sportId === 'patinaje' ? metrics.speed : metrics.pace} label={sportId === 'escalada' ? 'Ruta' : sportId === 'ciclismo' || sportId === 'patinaje' ? 'Velocidad' : 'Ritmo'} />
             <Metric value={`${activity.elevationM || 0} m`} label="Desnivel" />
-          </View>
+          </View>}
           <TextInput style={styles.input} placeholder="¿Cómo ha ido el entrenamiento?" placeholderTextColor={colors.textDim} value={caption} onChangeText={setCaption} multiline />
           <Text style={styles.sectionLabel}>Quién puede verlo</Text>
           <View style={styles.row}>{[['public','Todo el mundo'],['followers','Seguidores'],['private','Solo yo']].map(([id,label]) => <Choice key={id} active={audience === id} label={label} onPress={() => setAudience(id)} />)}</View>
-          <Pressable style={styles.privacyRow} onPress={() => setHideEnds((value) => !value)}>
+          {activity && <Pressable style={styles.privacyRow} onPress={() => setHideEnds((value) => !value)}>
             <Ionicons name={hideEnds ? 'shield-checkmark' : 'shield-outline'} size={20} color={hideEnds ? colors.accentStrong : colors.textDim} />
             <View style={{ flex: 1 }}><Text style={styles.privacyTitle}>Ocultar inicio y final</Text><Text style={styles.hint}>Recorta aproximadamente 200 m para no revelar casa o trabajo.</Text></View>
             <Ionicons name={hideEnds ? 'checkbox' : 'square-outline'} size={20} color={colors.accentStrong} />
-          </Pressable>
-          <Pressable style={styles.publish} onPress={publish} disabled={saving}><Text style={styles.publishText}>{saving ? 'Guardando…' : 'Guardar y compartir'}</Text></Pressable>
+          </Pressable>}
+          <Pressable style={[styles.publish, sportId === 'escalada' && recordApproach && !activity && { opacity: 0.45 }]} onPress={publish} disabled={saving || (sportId === 'escalada' && recordApproach && !activity)}><Text style={styles.publishText}>{saving ? 'Guardando…' : sportId === 'escalada' && recordApproach && !activity ? 'Termina la aproximación para guardar' : 'Guardar y compartir'}</Text></Pressable>
         </>
       )}
     </ScrollView>
@@ -130,6 +149,7 @@ export default function RecordActivityScreen({ navigation }) {
 
 function Metric({ value, label }) { return <View style={styles.metric}><Text style={styles.metricValue}>{value}</Text><Text style={styles.metricLabel}>{label}</Text></View>; }
 function Choice({ active, label, onPress }) { return <Pressable style={[styles.choice, active && styles.choiceActive]} onPress={onPress}><Text style={[styles.choiceText, active && styles.choiceTextActive]}>{label}</Text></Pressable>; }
+function SmallInput({ label, value, onChangeText, placeholder }) { return <View style={styles.smallField}><Text style={styles.fieldLabel}>{label}</Text><TextInput style={styles.smallInput} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.textDim} keyboardType={label === 'Grado máximo' ? 'default' : 'numeric'} /></View>; }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg }, content: { padding: 16, paddingTop: 22, paddingBottom: 42, gap: 14 },
@@ -140,4 +160,5 @@ const styles = StyleSheet.create({
   input: { minHeight: 76, color: colors.text, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: 12, textAlignVertical: 'top' }, sectionLabel: { color: colors.textDim, fontSize: 11, fontWeight: '800', textTransform: 'uppercase' }, row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, choice: { backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 }, choiceActive: { backgroundColor: colors.accent }, choiceText: { color: colors.textDim, fontSize: 11, fontWeight: '700' }, choiceTextActive: { color: colors.bg },
   privacyRow: { flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: 12 }, privacyTitle: { color: colors.text, fontSize: 13, fontWeight: '800' },
   publish: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center' }, publishText: { color: colors.bg, fontSize: 15, fontWeight: '900' },
+  climbForm: { gap: 12 }, climbIntro: { flexDirection: 'row', alignItems: 'center', gap: 10 }, climbTitle: { color: colors.text, fontSize: 15, fontWeight: '900' }, climbGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, smallField: { width: '48%', gap: 5 }, fieldLabel: { color: colors.textDim, fontSize: 10, fontWeight: '700' }, smallInput: { color: colors.text, backgroundColor: colors.surface2, borderRadius: 12, paddingHorizontal: 11, paddingVertical: 10, fontSize: 12 },
 });

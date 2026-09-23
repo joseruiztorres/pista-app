@@ -167,7 +167,7 @@ export default function FeedScreen({ navigation }) {
         ListHeaderComponent={
           <View>
             <StoriesBar navigation={navigation} />
-            {filter === 'todo' && <DailyChallengeCard />}
+            {filter === 'todo' && <DailyChallengeCard navigation={navigation} />}
           </View>
         }
         ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
