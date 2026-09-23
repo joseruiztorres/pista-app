@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -49,6 +49,12 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
   const [recordApproach, setRecordApproach] = useState(false);
   const [guideRoute, setGuideRoute] = useState(Array.isArray(navRoute?.params?.targetRoute) ? navRoute.params.targetRoute : null);
   const [sourcePostId, setSourcePostId] = useState(navRoute?.params?.sourcePostId || null);
+  const scrollRef = useRef(null);
+
+  function finishActivity(nextActivity) {
+    setActivity(nextActivity);
+    setTimeout(() => scrollRef.current?.scrollToEnd?.({ animated: true }), 180);
+  }
 
   function clearGuide() {
     setGuideRoute(null);
@@ -123,7 +129,7 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView ref={scrollRef} style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <View><Text style={styles.eyebrow}>ACTIVIDAD</Text><Text style={styles.title}>Registrar entrenamiento</Text></View>
         <Ionicons name="navigate-circle" size={34} color={colors.accent} />
@@ -152,13 +158,14 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
             <Text style={styles.sectionLabel}>Tipo</Text><View style={styles.row}>{[['rocodromo','Rocódromo'],['roca','Roca'],['boulder','Boulder']].map(([id,label]) => <Choice key={id} active={climbType === id} label={label} onPress={() => setClimbType(id)} />)}</View>
             <View style={styles.climbGrid}><SmallInput label="Vías hechas" value={climbRoutes} onChangeText={setClimbRoutes} placeholder="6" /><SmallInput label="Grado máximo" value={climbGrade} onChangeText={setClimbGrade} placeholder="6b / V4" /><SmallInput label="Intentos" value={climbAttempts} onChangeText={setClimbAttempts} placeholder="10" /><SmallInput label="Altura total (m)" value={climbVertical} onChangeText={setClimbVertical} placeholder="120" /><SmallInput label="Duración (min)" value={climbDuration} onChangeText={setClimbDuration} placeholder="60" /></View>
             <Pressable style={styles.privacyRow} onPress={() => { setRecordApproach((value) => !value); setActivity(null); }}><Ionicons name="trail-sign-outline" size={20} color={recordApproach ? colors.accentStrong : colors.textDim} /><View style={{ flex: 1 }}><Text style={styles.privacyTitle}>Grabar aproximación GPS</Text><Text style={styles.hint}>Para escalada exterior: guarda el camino hasta la zona.</Text></View><Ionicons name={recordApproach ? 'checkbox' : 'square-outline'} size={20} color={colors.accentStrong} /></Pressable>
-            {recordApproach && <RouteRecorder onFinish={setActivity} targetRoute={guideRoute} />}
+            {recordApproach && <RouteRecorder onFinish={finishActivity} targetRoute={guideRoute} />}
           </View>
-        ) : <><RouteRecorder onFinish={setActivity} targetRoute={guideRoute} />{!activity && <Text style={styles.hint}>Mantén Pista abierta durante esta primera versión del registro. La aplicación móvil permitirá grabar también con la pantalla bloqueada.</Text>}</>}
+        ) : <><RouteRecorder onFinish={finishActivity} targetRoute={guideRoute} />{!activity && <Text style={styles.hint}>Mantén Pista abierta durante esta primera versión del registro. La aplicación móvil permitirá grabar también con la pantalla bloqueada.</Text>}</>}
       </View>
 
       {(activity || sportId === 'escalada') && (
         <>
+          {activity && <View style={styles.finishedBanner}><Ionicons name="checkmark-circle" size={22} color={colors.accentStrong} /><View style={{ flex: 1 }}><Text style={styles.finishedTitle}>Grabación terminada</Text><Text style={styles.hint}>Revisa los datos y pulsa “Guardar y compartir” para que aparezca en Mis rutas.</Text></View></View>}
           {activity && <View style={styles.metrics}>
             <Metric value={`${activity.distanceKm.toFixed(2)} km`} label="Distancia" />
             <Metric value={`${Math.round(activity.durationSec / 60)} min`} label="Tiempo" />
@@ -190,6 +197,7 @@ const styles = StyleSheet.create({
   sports: { gap: 8, paddingVertical: 2 }, sport: { flexDirection: 'row', gap: 6, alignItems: 'center', backgroundColor: colors.surface2, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 999 }, sportActive: { backgroundColor: colors.accent }, sportText: { color: colors.textDim, fontSize: 12, fontWeight: '700' }, sportTextActive: { color: colors.bg },
   card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 18, padding: 14, gap: 10 }, hint: { color: colors.textDim, fontSize: 11, lineHeight: 16 },
   guideBanner: { flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.accent, borderRadius: 15, padding: 12 }, guideTitle: { color: colors.text, fontSize: 13, fontWeight: '900' },
+  finishedBanner: { flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.accent, borderRadius: 15, padding: 12 }, finishedTitle: { color: colors.text, fontSize: 14, fontWeight: '900' },
   metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, metric: { width: '48%', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: 12 }, metricValue: { color: colors.text, fontSize: 17, fontWeight: '900' }, metricLabel: { color: colors.textDim, fontSize: 10, marginTop: 3 },
   input: { minHeight: 76, color: colors.text, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: 12, textAlignVertical: 'top' }, sectionLabel: { color: colors.textDim, fontSize: 11, fontWeight: '800', textTransform: 'uppercase' }, row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, choice: { backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 }, choiceActive: { backgroundColor: colors.accent }, choiceText: { color: colors.textDim, fontSize: 11, fontWeight: '700' }, choiceTextActive: { color: colors.bg },
   privacyRow: { flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: 12 }, privacyTitle: { color: colors.text, fontSize: 13, fontWeight: '800' },

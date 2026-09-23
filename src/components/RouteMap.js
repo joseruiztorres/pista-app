@@ -63,14 +63,14 @@ function buildTiles(center, zoom, width, height) {
   return tiles;
 }
 
-export default function RouteMap({ route, comparisonRoute, height = 280, onPressAttribution }) {
+export default function RouteMap({ route, comparisonRoute, height = 280, onPressAttribution, statusLabel = 'Recorrido fijado' }) {
   const [width, setWidth] = useState(360);
   const validRoute = (route || []).filter((point) => Array.isArray(point) && Number.isFinite(Number(point[0])) && Number.isFinite(Number(point[1])));
   const validComparison = (comparisonRoute || []).filter((point) => Array.isArray(point) && Number.isFinite(Number(point[0])) && Number.isFinite(Number(point[1])));
   const allPoints = validComparison.length >= 2 ? [...validRoute, ...validComparison] : validRoute;
 
   const map = useMemo(() => {
-    if (allPoints.length < 2) return null;
+    if (allPoints.length < 1) return null;
     const fit = fitMap(allPoints, width, height);
     const centerWorld = toWorld(fit.center.lat, fit.center.lng, fit.zoom);
     const project = (point) => {
@@ -89,7 +89,7 @@ export default function RouteMap({ route, comparisonRoute, height = 280, onPress
   const routePolyline = map.routePoints.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
   const comparisonPolyline = map.comparisonPoints.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
   const start = map.routePoints[0];
-  const end = map.routePoints[map.routePoints.length - 1];
+  const end = map.routePoints.length > 1 ? map.routePoints[map.routePoints.length - 1] : null;
 
   return (
     <View style={[styles.map, { height }]} onLayout={(event) => setWidth(Math.max(280, event.nativeEvent.layout.width))}>
@@ -98,13 +98,13 @@ export default function RouteMap({ route, comparisonRoute, height = 280, onPress
       ))}
       <Svg pointerEvents="none" width={width} height={height} style={StyleSheet.absoluteFillObject}>
         {comparisonPolyline && <Polyline points={comparisonPolyline} fill="none" stroke={colors.text} strokeOpacity={0.7} strokeWidth={5} strokeDasharray="8 7" strokeLinecap="round" strokeLinejoin="round" />}
-        <Polyline points={routePolyline} fill="none" stroke={colors.accentStrong} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
+        {map.routePoints.length > 1 && <Polyline points={routePolyline} fill="none" stroke={colors.accentStrong} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />}
         <Circle cx={start[0]} cy={start[1]} r={7} fill={colors.accentStrong} stroke={colors.bg} strokeWidth={3} />
-        <Circle cx={end[0]} cy={end[1]} r={7} fill={colors.amber} stroke={colors.bg} strokeWidth={3} />
+        {end && <Circle cx={end[0]} cy={end[1]} r={7} fill={colors.amber} stroke={colors.bg} strokeWidth={3} />}
       </Svg>
       <View pointerEvents="none" style={styles.legend}>
-        <Ionicons name="lock-closed-outline" size={13} color={colors.text} />
-        <Text style={styles.legendText}>Recorrido fijado</Text>
+        <Ionicons name={statusLabel === 'Grabando ahora' ? 'radio-button-on' : 'lock-closed-outline'} size={13} color={statusLabel === 'Grabando ahora' ? colors.clay : colors.text} />
+        <Text style={styles.legendText}>{statusLabel}</Text>
       </View>
       <Pressable style={styles.attribution} onPress={onPressAttribution} disabled={!onPressAttribution}>
         <Text style={styles.attributionText}>© OpenStreetMap</Text>

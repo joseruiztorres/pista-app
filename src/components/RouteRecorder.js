@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import RoutePreview from './RoutePreview';
+import RouteMap from './RouteMap';
 import { haversineKm, routeDistanceKm } from '../lib/geo';
 import { colors } from '../lib/theme';
 
@@ -26,6 +27,7 @@ export default function RouteRecorder({ onFinish, targetRoute }) {
   const timerRef = useRef(null);
   const startedAtRef = useRef(null);
   const pausedAccumRef = useRef(0);
+  const routeRef = useRef([]);
 
   const available = Platform.OS !== 'web' || (typeof navigator !== 'undefined' && !!navigator.geolocation);
 
@@ -71,10 +73,14 @@ export default function RouteRecorder({ onFinish, targetRoute }) {
     if (Number.isFinite(accuracy) && accuracy > 60) return;
     setRoute((prev) => {
       const next = altitude == null ? [latitude, longitude] : [latitude, longitude, altitude];
-      if (!prev.length) return [next];
+      if (!prev.length) {
+        routeRef.current = [next];
+        return routeRef.current;
+      }
       const deltaKm = haversineKm(prev[prev.length - 1], next);
       if (deltaKm < 0.002 || deltaKm > 0.25) return prev;
-      return [...prev, next];
+      routeRef.current = [...prev, next];
+      return routeRef.current;
     });
   }
 
@@ -84,6 +90,7 @@ export default function RouteRecorder({ onFinish, targetRoute }) {
       return;
     }
     setError(null);
+    routeRef.current = [];
     setRoute([]);
     pausedAccumRef.current = 0;
     setElapsedSec(0);
@@ -106,27 +113,32 @@ export default function RouteRecorder({ onFinish, targetRoute }) {
 
   function stop() {
     stopWatch();
-    if (route.length < 2) {
-      Alert.alert('Ruta muy corta', 'Graba al menos unos segundos de movimiento antes de parar.');
-      setStatus('idle');
+    const finalRoute = routeRef.current;
+    setStatus('done');
+    if (finalRoute.length < 2) {
+      setError(finalRoute.length
+        ? 'Solo hemos recibido un punto GPS. Muévete unos metros y prueba de nuevo para poder dibujar el recorrido.'
+        : 'No hemos recibido ninguna ubicación. Comprueba el permiso de ubicación y vuelve a intentarlo.');
       return;
     }
-    setStatus('done');
-    const distanceKm = routeDistanceKm(route);
+    setError(null);
+    const distanceKm = routeDistanceKm(finalRoute);
     const durationSec = Math.max(1, Math.round(elapsedSec));
     const durationMin = Math.max(1, Math.round(durationSec / 60));
-    const altitudes = route.map((point) => point[2]).filter((value) => Number.isFinite(value));
+    const altitudes = finalRoute.map((point) => point[2]).filter((value) => Number.isFinite(value));
     let elevationM = 0;
     for (let i = 1; i < altitudes.length; i++) {
       const gain = altitudes[i] - altitudes[i - 1];
       if (gain >= 1 && gain <= 25) elevationM += gain;
     }
-    onFinish({ route, distanceKm, durationMin, durationSec, elevationM: Math.round(elevationM) });
+    onFinish({ route: finalRoute, distanceKm, durationMin, durationSec, elevationM: Math.round(elevationM) });
   }
 
   function reset() {
     setStatus('idle');
+    routeRef.current = [];
     setRoute([]);
+    setError(null);
     setElapsedSec(0);
   }
 
@@ -153,7 +165,11 @@ export default function RouteRecorder({ onFinish, targetRoute }) {
             <Stat label="Puntos" value={String(route.length)} />
             {!!targetDistanceKm && <Stat label="Objetivo" value={`${targetDistanceKm.toFixed(2)} km`} />}
           </View>
-          {route.length >= 2 && <RoutePreview route={route} comparisonRoute={targetRoute} height={130} label={targetDistanceKm ? 'verde: tu recorrido · gris: ruta de referencia' : 'recorrido registrado con GPS'} />}
+          {route.length >= 1 ? (
+            <RouteMap route={route} comparisonRoute={targetRoute} height={190} statusLabel="Grabando ahora" />
+          ) : (
+            <View style={styles.waitingGps}><Ionicons name="locate-outline" size={20} color={colors.accentStrong} /><Text style={styles.waitingText}>Buscando tu posición GPS…</Text></View>
+          )}
           <View style={styles.controlsRow}>
             {status === 'recording' ? (
               <Pressable style={styles.controlBtn} onPress={pause}>
@@ -176,11 +192,16 @@ export default function RouteRecorder({ onFinish, targetRoute }) {
 
       {status === 'done' && (
         <View style={styles.doneCard}>
+          <View style={styles.doneTitleRow}>
+            <Ionicons name={route.length >= 2 ? 'checkmark-circle' : 'warning'} size={22} color={route.length >= 2 ? colors.accentStrong : colors.amber} />
+            <View style={{ flex: 1 }}><Text style={styles.doneTitle}>{route.length >= 2 ? 'Ruta lista para guardar' : 'No hay recorrido suficiente'}</Text><Text style={styles.doneHint}>{route.length >= 2 ? 'Revisa el mapa y guarda la actividad debajo.' : 'La grabación se ha detenido, pero todavía no podemos dibujar una ruta.'}</Text></View>
+          </View>
           <View style={styles.statsRow}>
             <Stat label="Distancia" value={`${distanceKm.toFixed(2)} km`} />
             <Stat label="Tiempo" value={formatDuration(elapsedSec)} />
+            <Stat label="Puntos GPS" value={String(route.length)} />
           </View>
-          <RoutePreview route={route} comparisonRoute={targetRoute} height={130} label={targetDistanceKm ? 'verde: tu recorrido · gris: ruta de referencia' : 'recorrido registrado con GPS'} />
+          {route.length >= 1 && <RouteMap route={route} comparisonRoute={targetRoute} height={220} statusLabel={route.length >= 2 ? 'Grabación terminada' : 'Único punto recibido'} />}
           <Pressable style={styles.secondaryBtn} onPress={reset}>
             <Ionicons name="refresh" size={14} color={colors.accentStrong} />
             <Text style={styles.secondaryBtnText}>Grabar de nuevo</Text>
@@ -212,6 +233,11 @@ const styles = StyleSheet.create({
   startBtnText: { color: colors.accentStrong, fontSize: 13, fontWeight: '700' },
   recordingCard: { backgroundColor: colors.surface, borderRadius: 14, padding: 12, gap: 10, borderWidth: 1, borderColor: colors.line },
   doneCard: { backgroundColor: colors.surface, borderRadius: 14, padding: 12, gap: 10, borderWidth: 1, borderColor: colors.line },
+  doneTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  doneTitle: { color: colors.text, fontSize: 14, fontWeight: '900' },
+  doneHint: { color: colors.textDim, fontSize: 10, lineHeight: 15, marginTop: 2 },
+  waitingGps: { height: 120, borderRadius: 14, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center', gap: 7 },
+  waitingText: { color: colors.textDim, fontSize: 11, fontWeight: '700' },
   statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
   stat: { alignItems: 'center' },
   statValue: { color: colors.text, fontSize: 16, fontWeight: '800' },
