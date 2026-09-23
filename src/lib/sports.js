@@ -9,6 +9,18 @@ export const SPORT_ICON = {
   gym: 'barbell-outline',
   calistenia: 'body-outline',
   natacion: 'water-outline',
+  caminar: 'footsteps-outline',
+  senderismo: 'trail-sign-outline',
+  trail: 'trending-up-outline',
+  padel: 'tennisball-outline',
+  futbol: 'football-outline',
+  tenis: 'tennisball-outline',
+  crossfit: 'barbell-outline',
+  yoga: 'body-outline',
+  escalada: 'trending-up-outline',
+  patinaje: 'speedometer-outline',
+  esqui: 'snow-outline',
+  surf: 'water-outline',
 };
 
 export function iconFor(sportId) {
