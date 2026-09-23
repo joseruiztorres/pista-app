@@ -41,6 +41,8 @@ import ExploreScreen from './src/screens/ExploreScreen';
 import RecordActivityScreen from './src/screens/RecordActivityScreen';
 import CreateMenuScreen from './src/screens/CreateMenuScreen';
 import StoryPrivacyScreen from './src/screens/StoryPrivacyScreen';
+import ProgressScreen from './src/screens/ProgressScreen';
+import TrainingCalendarScreen from './src/screens/TrainingCalendarScreen';
 import { registerForPushNotificationsAsync } from './src/lib/pushNotifications';
 
 const Stack = createNativeStackNavigator();
@@ -128,6 +130,8 @@ function RootNavigator() {
           <Stack.Screen name="CreateMenu" component={CreateMenuScreen} options={{ presentation: 'modal', headerShown: true, title: 'Crear' }} />
           <Stack.Screen name="StoryPrivacy" component={StoryPrivacyScreen} options={{ headerShown: true, title: 'Privacidad de historias' }} />
           <Stack.Screen name="Challenges" component={RetosScreen} options={{ headerShown: true, title: 'Retos' }} />
+          <Stack.Screen name="Progress" component={ProgressScreen} options={{ headerShown: true, title: 'Mi progreso' }} />
+          <Stack.Screen name="TrainingCalendar" component={TrainingCalendarScreen} options={{ headerShown: true, title: 'Calendario' }} />
           <Stack.Screen name="Messages" component={ChatListScreen} options={{ headerShown: true, title: 'Mensajes' }} />
           <Stack.Screen name="CreateStory" component={CreateStoryScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nueva historia' }} />
           <Stack.Screen name="StoryViewer" component={StoryViewerScreen} options={{ headerShown: false, animation: 'fade' }} />
