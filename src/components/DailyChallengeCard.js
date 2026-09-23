@@ -4,10 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
-import { checkStreakBadges } from '../lib/awardBadges';
+import { checkActivityBadges, checkStreakBadges } from '../lib/awardBadges';
 import { colors } from '../lib/theme';
 
-export default function DailyChallengeCard() {
+export default function DailyChallengeCard({ navigation }) {
   const { user, sportIds } = useAuth();
   const [sports, setSports] = useState([]);
   const [streak, setStreak] = useState(0);
@@ -31,8 +31,8 @@ export default function DailyChallengeCard() {
 
   async function markDone(sportId) {
     if (!user) return;
-    await supabase.from('daily_checkins').insert({ profile_id: user.id, sport_id: sportId });
-    await checkStreakBadges(user.id);
+    await supabase.from('daily_checkins').upsert({ profile_id: user.id, sport_id: sportId, check_date: new Date().toISOString().slice(0, 10) }, { onConflict: 'profile_id,check_date' });
+    await Promise.all([checkStreakBadges(user.id), checkActivityBadges(user.id)]);
     load();
   }
 
@@ -50,6 +50,7 @@ export default function DailyChallengeCard() {
         </View>
         <Text style={styles.title}>Racha de {streak} días</Text>
         <Text style={styles.body}>Has marcado tu actividad de hoy. Vuelve mañana para no cortarla.</Text>
+        <Pressable style={styles.more} onPress={() => navigation?.navigate('Challenges')}><Text style={styles.moreText}>Ver objetivos y medallas</Text><Ionicons name="arrow-forward" size={14} color="#fff" /></Pressable>
       </View>
     );
   }
@@ -75,6 +76,7 @@ export default function DailyChallengeCard() {
           ))}
         </View>
       </ScrollView>
+      <Pressable style={styles.more} onPress={() => navigation?.navigate('Challenges')}><Text style={styles.moreText}>Ver todos los retos</Text><Ionicons name="arrow-forward" size={14} color="#fff" /></Pressable>
     </View>
   );
 }
@@ -90,4 +92,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8 },
   qbtn: { alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 14, paddingVertical: 10, paddingHorizontal: 14 },
   qbtnText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  more: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5, paddingTop: 2 },
+  moreText: { color: '#fff', fontSize: 11, fontWeight: '800' },
 });

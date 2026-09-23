@@ -105,16 +105,28 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
         )}
       </View>
 
-      {post.type === 'ruta' && details.route && (
+      {details.route && (
         <RoutePreview route={details.route} />
       )}
-      {post.type === 'ruta' && (details.distance_km || details.duration_min) && (
+      {post.type === 'ruta' && !details.activity_kind && (details.distance_km || details.duration_min) && (
         <View style={styles.statsRow}>
           {details.distance_km && <Stat label="Distancia" value={`${details.distance_km} km`} />}
           {details.duration_min && <Stat label="Duración" value={`${details.duration_min} min`} />}
           {details.pace_min_km && <Stat label="Ritmo" value={details.pace_min_km} />}
           {details.avg_speed_kmh && <Stat label="Velocidad" value={details.avg_speed_kmh} />}
           {details.elevation_m && <Stat label="Desnivel" value={`${details.elevation_m} m`} />}
+        </View>
+      )}
+
+      {details.activity_kind === 'climbing' && (
+        <View style={styles.statsRow}>
+          {details.climb_type && <Stat label="Tipo" value={{ rocodromo: 'Rocódromo', roca: 'Roca', boulder: 'Boulder' }[details.climb_type] || details.climb_type} />}
+          {!!details.routes_completed && <Stat label="Vías" value={String(details.routes_completed)} />}
+          {details.highest_grade && <Stat label="Grado máximo" value={details.highest_grade} />}
+          {!!details.attempts && <Stat label="Intentos" value={String(details.attempts)} />}
+          {!!details.vertical_m && <Stat label="Altura" value={`${details.vertical_m} m`} />}
+          {!!details.duration_min && <Stat label="Duración" value={`${details.duration_min} min`} />}
+          {!!details.approach_distance_km && <Stat label="Aproximación" value={`${details.approach_distance_km} km`} />}
         </View>
       )}
 
