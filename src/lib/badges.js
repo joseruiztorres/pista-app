@@ -7,6 +7,14 @@ export const BADGE_ICON = {
   streak_7: 'flame',
   streak_30: 'trophy-outline',
   first_post: 'rocket-outline',
+  activities_5: 'flash-outline',
+  activities_25: 'fitness-outline',
+  distance_10: 'map-outline',
+  variety_3: 'apps-outline',
+  climb_start: 'trending-up-outline',
+  planner_3: 'calendar-outline',
+  week_3: 'calendar-number-outline',
+  active_300: 'time-outline',
 };
 
 export function iconForBadge(badgeId) {
