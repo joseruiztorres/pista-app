@@ -11,6 +11,7 @@ import { extFromAsset } from '../lib/media';
 import RouteRecorder from '../components/RouteRecorder';
 import VideoPlayer from '../components/VideoPlayer';
 import { colors, shape } from '../lib/theme';
+import { alert } from '../lib/alert';
 
 const TYPES = [
   { id: 'ruta', label: 'Ruta' },
@@ -120,7 +121,7 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
     if (result.canceled) return;
     const selected = result.assets[0];
     if (selected.duration && selected.duration > 60000) {
-      Alert.alert('Vídeo demasiado largo', 'Elige un vídeo de hasta 60 segundos.');
+      alert('Vídeo demasiado largo', 'Elige un vídeo de hasta 60 segundos.');
       return;
     }
     setImages([]);
@@ -199,7 +200,7 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
       await AsyncStorage.setItem('@pista:last_sport', sportId);
       navigation.goBack();
     } catch (err) {
-      Alert.alert('No se pudo publicar', err.message);
+      alert('No se pudo publicar', err.message);
     } finally {
       setSaving(false);
     }
