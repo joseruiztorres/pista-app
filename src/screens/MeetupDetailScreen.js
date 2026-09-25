@@ -7,6 +7,7 @@ import { iconFor } from '../lib/sports';
 import { colors, shape } from '../lib/theme';
 import GoogleMapCard from '../components/GoogleMapCard';
 import { checkActivityBadges } from '../lib/awardBadges';
+import { alert } from '../lib/alert';
 
 function formatWhen(iso) {
   const d = new Date(iso);
@@ -55,7 +56,7 @@ export default function MeetupDetailScreen({ route, navigation }) {
   }
 
   async function handleDelete() {
-    Alert.alert('Cancelar quedada', '¿Seguro que quieres cancelarla? No se puede deshacer.', [
+    alert('Cancelar quedada', '¿Seguro que quieres cancelarla? No se puede deshacer.', [
       { text: 'No', style: 'cancel' },
       {
         text: 'Sí, cancelar', style: 'destructive', onPress: async () => {
