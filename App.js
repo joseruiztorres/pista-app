@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 
 import { AuthProvider, useAuth } from './src/context/AuthProvider';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import { colors, shape } from './src/lib/theme';
 import { PistaMark } from './src/components/PistaLogo';
 
@@ -287,12 +288,14 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <StatusBar style="light" />
-      <NavigationContainer ref={navigationRef} theme={navTheme} linking={linking}>
-        <RootNavigator />
-      </NavigationContainer>
-      <CelebrationOverlay />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <StatusBar style="light" />
+        <NavigationContainer ref={navigationRef} theme={navTheme} linking={linking}>
+          <RootNavigator />
+        </NavigationContainer>
+        <CelebrationOverlay />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
