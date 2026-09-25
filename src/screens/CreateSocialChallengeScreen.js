@@ -7,6 +7,7 @@ import { colors, shape } from '../lib/theme';
 import { formatMetric, metricLabel } from '../lib/engagement';
 import Avatar from '../components/Avatar';
 import SportLoader from '../components/SportLoader';
+import { alert } from '../lib/alert';
 
 const TARGETS = { sessions: [3, 5, 7, 10], distance_km: [5, 10, 20, 50], minutes: [60, 120, 180, 300] };
 
@@ -48,15 +49,15 @@ export default function CreateSocialChallengeScreen({ navigation }) {
   }
 
   async function create() {
-    if (!title.trim()) return Alert.alert('Falta el nombre', 'Pon un nombre al reto.');
-    if (!selectedCount) return Alert.alert('Elige compañía', 'Selecciona al menos una persona.');
+    if (!title.trim()) return alert('Falta el nombre', 'Pon un nombre al reto.');
+    if (!selectedCount) return alert('Elige compañía', 'Selecciona al menos una persona.');
     setSaving(true);
     const { error } = await supabase.rpc('create_social_challenge', {
       p_title: title.trim(), p_mode: mode, p_metric: metric, p_target: target,
       p_duration_days: duration, p_invitee_ids: [...selected],
     });
     setSaving(false);
-    if (error) return Alert.alert('No se pudo crear', error.message);
+    if (error) return alert('No se pudo crear', error.message);
     navigation.goBack();
   }
 
