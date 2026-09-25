@@ -47,6 +47,8 @@ import RoutesScreen from './src/screens/RoutesScreen';
 import ActivityDetailScreen from './src/screens/ActivityDetailScreen';
 import AthleteLevelScreen from './src/screens/AthleteLevelScreen';
 import WeeklyRecapScreen from './src/screens/WeeklyRecapScreen';
+import SocialChallengesScreen from './src/screens/SocialChallengesScreen';
+import CreateSocialChallengeScreen from './src/screens/CreateSocialChallengeScreen';
 import CelebrationOverlay from './src/components/CelebrationOverlay';
 import { registerForPushNotificationsAsync } from './src/lib/pushNotifications';
 
@@ -141,6 +143,8 @@ function RootNavigator() {
           <Stack.Screen name="ActivityDetail" component={ActivityDetailScreen} options={{ headerShown: true, title: 'Actividad' }} />
           <Stack.Screen name="AthleteLevel" component={AthleteLevelScreen} options={{ headerShown: true, title: 'Mi nivel Pista' }} />
           <Stack.Screen name="WeeklyRecap" component={WeeklyRecapScreen} options={{ headerShown: true, title: 'Mi semana' }} />
+          <Stack.Screen name="SocialChallenges" component={SocialChallengesScreen} options={{ headerShown: true, title: 'Retos con amigos' }} />
+          <Stack.Screen name="CreateSocialChallenge" component={CreateSocialChallengeScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nuevo reto social' }} />
           <Stack.Screen name="Messages" component={ChatListScreen} options={{ headerShown: true, title: 'Mensajes' }} />
           <Stack.Screen name="CreateStory" component={CreateStoryScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nueva historia' }} />
           <Stack.Screen name="StoryViewer" component={StoryViewerScreen} options={{ headerShown: false, animation: 'fade' }} />

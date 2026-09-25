@@ -111,7 +111,7 @@ function buildStats(posts, checkins, plans, meetups, streak) {
 export async function syncGamification(profileId) {
   if (!profileId) return null;
   const week = dateKey(startOfWeek());
-  const [postsRes, checkinsRes, plansRes, meetupsRes, badgesRes, catalogRes, personalRes, streakRes, previousProgressRes] = await Promise.all([
+  const [postsRes, checkinsRes, plansRes, meetupsRes, badgesRes, catalogRes, personalRes, streakRes, previousProgressRes, socialRewardsRes] = await Promise.all([
     supabase.from('posts').select('sport_id, details, created_at').eq('author_id', profileId),
     supabase.from('daily_checkins').select('sport_id, check_date').eq('profile_id', profileId),
     supabase.from('training_events').select('id').eq('profile_id', profileId).eq('status', 'completed'),
@@ -121,6 +121,7 @@ export async function syncGamification(profileId) {
     supabase.from('personal_challenges').select('*').eq('profile_id', profileId),
     supabase.rpc('current_streak', { p_profile_id: profileId }),
     supabase.from('profile_progress').select('level').eq('profile_id', profileId).maybeSingle(),
+    supabase.from('social_challenge_rewards').select('points').eq('profile_id', profileId),
   ]);
   const posts = postsRes.data || [];
   const checkins = checkinsRes.data || [];
@@ -146,7 +147,8 @@ export async function syncGamification(profileId) {
   const badgeXp = (badgesRes.data || []).reduce((sum, row) => sum + Number(row.badges?.xp_reward || 0), 0);
   const catalogXp = (catalogRes.data || []).filter((row) => row.completed_at).reduce((sum, row) => sum + Number(row.challenges?.points || 100), 0);
   const personalXp = allPersonal.filter((row) => row.completed_at).reduce((sum, row) => sum + Number(row.points || 0), 0);
-  const xp = Math.round(stats.sessions * 20 + stats.posts * 10 + Math.min(stats.distance * 2, 2000) + Math.min(stats.minutes / 10, 1000) + stats.plans * 15 + stats.meetups * 20 + stats.streak * 5 + badgeXp + catalogXp + personalXp);
+  const socialXp = (socialRewardsRes.data || []).reduce((sum, row) => sum + Number(row.points || 0), 0);
+  const xp = Math.round(stats.sessions * 20 + stats.posts * 10 + Math.min(stats.distance * 2, 2000) + Math.min(stats.minutes / 10, 1000) + stats.plans * 15 + stats.meetups * 20 + stats.streak * 5 + badgeXp + catalogXp + personalXp + socialXp);
   const level = levelFromXp(xp);
   const identity = athleteIdentity(stats);
   const progress = { profile_id: profileId, xp, level: level.level, athlete_type: identity.id, athlete_label: identity.label, stats, calculated_at: new Date().toISOString() };

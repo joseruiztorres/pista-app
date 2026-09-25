@@ -11,6 +11,9 @@ export function iconForNotif(type) {
     case 'message': return 'chatbubble-ellipses-outline';
     case 'follow_request': return 'person-add-outline';
     case 'follow_accept': return 'checkmark-circle-outline';
+    case 'social_challenge_invite': return 'people-circle-outline';
+    case 'social_challenge_join': return 'person-add-outline';
+    case 'social_challenge_complete': return 'trophy-outline';
     default: return 'notifications-outline';
   }
 }
@@ -30,6 +33,9 @@ export function textForNotif(n) {
     case 'message': return `${name} te ha enviado un mensaje`;
     case 'follow_request': return `${name} quiere seguirte`;
     case 'follow_accept': return `${name} aceptó tu solicitud de seguimiento`;
+    case 'social_challenge_invite': return `${name} te ha retado: ${n.data?.title || 'nuevo reto'}`;
+    case 'social_challenge_join': return `${name} se ha unido a tu reto`;
+    case 'social_challenge_complete': return `Reto completado: ${n.data?.title || 'reto social'} · +${n.data?.points || 0} XP`;
     default: return 'Nueva notificación';
   }
 }
@@ -45,6 +51,9 @@ export function targetForNotif(n) {
     case 'message': return { screen: 'Conversation', params: { conversationId: n.data?.conversation_id, otherName: actorName(n) } };
     case 'follow_request': return { screen: 'FollowRequests', params: {} };
     case 'follow_accept': return { screen: 'UserProfile', params: { profileId: n.actor_id } };
+    case 'social_challenge_invite':
+    case 'social_challenge_join':
+    case 'social_challenge_complete': return { screen: 'SocialChallenges', params: { challengeId: n.data?.challenge_id } };
     default: return null;
   }
 }
