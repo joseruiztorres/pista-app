@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { colors, shape } from '../lib/theme';
+import { alert } from '../lib/alert';
 
 export default function CreateHighlightScreen({ route, navigation }) {
   const { user } = useAuth();
@@ -39,11 +40,11 @@ export default function CreateHighlightScreen({ route, navigation }) {
 
   async function save() {
     if (!title.trim()) {
-      Alert.alert('Falta el nombre', 'Pon un nombre al destacado.');
+      alert('Falta el nombre', 'Pon un nombre al destacado.');
       return;
     }
     if (!selected.length) {
-      Alert.alert('Elige historias', 'Selecciona al menos una historia para guardar.');
+      alert('Elige historias', 'Selecciona al menos una historia para guardar.');
       return;
     }
     setSaving(true);
@@ -64,7 +65,7 @@ export default function CreateHighlightScreen({ route, navigation }) {
       if (linksError) throw linksError;
       navigation.popToTop();
     } catch (error) {
-      Alert.alert('No se pudo crear', error.message);
+      alert('No se pudo crear', error.message);
     } finally {
       setSaving(false);
     }
