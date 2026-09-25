@@ -49,6 +49,28 @@ export default function ProfileScreen({ navigation }) {
 
   useEffect(() => { load(); }, [load]);
 
+  const handleDeactivateAccount = useCallback(() => {
+    Alert.alert(
+      'Desactivar cuenta',
+      'Tu perfil y tus publicaciones dejarán de verse mientras esté desactivada. Nada se borra: vuelve a entrar con tu email y contraseña cuando quieras y se reactivará todo tal cual estaba.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Desactivar',
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await supabase.rpc('deactivate_own_account');
+            if (error) {
+              Alert.alert('No se pudo desactivar la cuenta', error.message);
+              return;
+            }
+            await signOut().catch(() => {});
+          },
+        },
+      ],
+    );
+  }, [signOut]);
+
   const handleDeleteAccount = useCallback(() => {
     Alert.alert(
       'Eliminar cuenta',
@@ -163,6 +185,11 @@ export default function ProfileScreen({ navigation }) {
         <Text style={styles.logoutText}>Cerrar sesión</Text>
       </Pressable>
 
+      <Pressable style={styles.deactivateAccount} onPress={handleDeactivateAccount}>
+        <Ionicons name="moon-outline" size={15} color={colors.textDim} />
+        <Text style={styles.deactivateAccountText}>Desactivar cuenta temporalmente</Text>
+      </Pressable>
+
       <Pressable style={styles.deleteAccount} onPress={handleDeleteAccount}>
         <Ionicons name="trash-outline" size={15} color={colors.textDim} />
         <Text style={styles.deleteAccountText}>Eliminar cuenta</Text>
@@ -201,6 +228,8 @@ const styles = StyleSheet.create({
   badgeText: { color: colors.textDim, fontSize: 11, fontWeight: '600' },
   logout: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: colors.line, ...shape.button, paddingVertical: 12, paddingHorizontal: 24, marginTop: 32 },
   logoutText: { color: colors.clay, fontWeight: '700' },
+  deactivateAccount: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 12, paddingHorizontal: 24, marginTop: 16 },
+  deactivateAccountText: { color: colors.textDim, fontWeight: '600', fontSize: 12 },
   deleteAccount: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 12, paddingHorizontal: 24, marginTop: 4 },
   deleteAccountText: { color: colors.textDim, fontWeight: '600', fontSize: 12 },
 });
