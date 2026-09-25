@@ -19,7 +19,11 @@ const FUERZA_SPORTS = ['gym', 'crossfit', 'calistenia', 'halterofilia'];
 const EFFORT_LABELS = { suave: 'Suave', normal: 'Normal', intenso: 'A tope' };
 
 function cropRoute(route, meters = 200) {
-  if (!route || route.length < 3) return route;
+  // Con menos de 3 puntos no hay margen para recortar de verdad el inicio y
+  // el final por separado (son casi el mismo punto o el recorrido entero):
+  // devolver la ruta tal cual filtraría casa/trabajo pese a haber pedido
+  // ocultar los extremos, así que en ese caso no publicamos ningún trazado.
+  if (!route || route.length < 3) return [];
   const totalKm = route.slice(1).reduce((sum, point, index) => sum + haversineKm(route[index], point), 0);
   const cropKm = Math.min(meters / 1000, totalKm * 0.2);
   let start = 0;
@@ -179,7 +183,7 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
             <Text style={styles.sectionLabel}>Tipo</Text><View style={styles.row}>{[['rocodromo','Rocódromo'],['roca','Roca'],['boulder','Boulder']].map(([id,label]) => <Choice key={id} active={climbType === id} label={label} onPress={() => setClimbType(id)} />)}</View>
             <View style={styles.climbGrid}><SmallInput label="Vías hechas" value={climbRoutes} onChangeText={setClimbRoutes} placeholder="6" /><SmallInput label="Grado máximo" value={climbGrade} onChangeText={setClimbGrade} placeholder="6b / V4" /><SmallInput label="Intentos" value={climbAttempts} onChangeText={setClimbAttempts} placeholder="10" /><SmallInput label="Altura total (m)" value={climbVertical} onChangeText={setClimbVertical} placeholder="120" /><SmallInput label="Duración (min)" value={climbDuration} onChangeText={setClimbDuration} placeholder="60" /></View>
             <Pressable style={styles.privacyRow} onPress={() => { setRecordApproach((value) => !value); setActivity(null); }}><Ionicons name="trail-sign-outline" size={20} color={recordApproach ? colors.accentStrong : colors.textDim} /><View style={{ flex: 1 }}><Text style={styles.privacyTitle}>Grabar aproximación GPS</Text><Text style={styles.hint}>Para escalada exterior: guarda el camino hasta la zona.</Text></View><Ionicons name={recordApproach ? 'checkbox' : 'square-outline'} size={20} color={colors.accentStrong} /></Pressable>
-            {recordApproach && <RouteRecorder onFinish={finishActivity} targetRoute={guideRoute} />}
+            {recordApproach && <RouteRecorder onFinish={finishActivity} targetRoute={guideRoute} onReset={() => setActivity(null)} />}
           </View>
         ) : isFuerza ? (
           <View style={styles.climbForm}>
@@ -188,7 +192,7 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
             <Text style={styles.sectionLabel}>¿Cómo te sentiste?</Text>
             <View style={styles.row}>{Object.entries(EFFORT_LABELS).map(([id, label]) => <Choice key={id} active={fuerzaEffort === id} label={label} onPress={() => setFuerzaEffort(id)} />)}</View>
           </View>
-        ) : <><RouteRecorder onFinish={finishActivity} targetRoute={guideRoute} />{!activity && <Text style={styles.hint}>Mantén Pista abierta durante esta primera versión del registro. La aplicación móvil permitirá grabar también con la pantalla bloqueada.</Text>}</>}
+        ) : <><RouteRecorder onFinish={finishActivity} targetRoute={guideRoute} onReset={() => setActivity(null)} />{!activity && <Text style={styles.hint}>Mantén Pista abierta durante esta primera versión del registro. La aplicación móvil permitirá grabar también con la pantalla bloqueada.</Text>}</>}
       </View>
 
       {(activity || isClimbing || isFuerza) && (
