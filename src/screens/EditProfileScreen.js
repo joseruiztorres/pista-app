@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthProvider';
 import Avatar from '../components/Avatar';
 import { colors, shape } from '../lib/theme';
 import { extFromAsset } from '../lib/media';
+import { alert } from '../lib/alert';
 
 export default function EditProfileScreen({ navigation }) {
   const { user, profile, refreshProfile } = useAuth();
@@ -36,7 +37,7 @@ export default function EditProfileScreen({ navigation }) {
       // Evita que quede cacheada la imagen antigua con la misma URL.
       setAvatarUrl(`${pub.publicUrl}?t=${Date.now()}`);
     } catch (err) {
-      Alert.alert('No se pudo subir la foto', err.message);
+      alert('No se pudo subir la foto', err.message);
     } finally {
       setUploadingAvatar(false);
     }
@@ -44,7 +45,7 @@ export default function EditProfileScreen({ navigation }) {
 
   async function handleSave() {
     if (!username.trim()) {
-      Alert.alert('Falta el usuario', 'El nombre de usuario no puede estar vacío.');
+      alert('Falta el usuario', 'El nombre de usuario no puede estar vacío.');
       return;
     }
     setSaving(true);
@@ -60,7 +61,7 @@ export default function EditProfileScreen({ navigation }) {
       await refreshProfile();
       navigation.goBack();
     } catch (err) {
-      Alert.alert('No se pudo guardar', err.message);
+      alert('No se pudo guardar', err.message);
     } finally {
       setSaving(false);
     }
