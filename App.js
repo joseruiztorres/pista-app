@@ -17,6 +17,7 @@ import CreatePostScreen from './src/screens/CreatePostScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import ComingSoonScreen from './src/screens/ComingSoonScreen';
 import RetosScreen from './src/screens/RetosScreen';
+import BadgesScreen from './src/screens/BadgesScreen';
 import UserProfileScreen from './src/screens/UserProfileScreen';
 import PostDetailScreen from './src/screens/PostDetailScreen';
 import MeetupsScreen from './src/screens/MeetupsScreen';
@@ -34,22 +35,6 @@ import EditPostScreen from './src/screens/EditPostScreen';
 import FollowRequestsScreen from './src/screens/FollowRequestsScreen';
 import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 import AdminReportsScreen from './src/screens/AdminReportsScreen';
-import CreateStoryScreen from './src/screens/CreateStoryScreen';
-import StoryViewerScreen from './src/screens/StoryViewerScreen';
-import CreateHighlightScreen from './src/screens/CreateHighlightScreen';
-import ExploreScreen from './src/screens/ExploreScreen';
-import RecordActivityScreen from './src/screens/RecordActivityScreen';
-import CreateMenuScreen from './src/screens/CreateMenuScreen';
-import StoryPrivacyScreen from './src/screens/StoryPrivacyScreen';
-import ProgressScreen from './src/screens/ProgressScreen';
-import TrainingCalendarScreen from './src/screens/TrainingCalendarScreen';
-import RoutesScreen from './src/screens/RoutesScreen';
-import ActivityDetailScreen from './src/screens/ActivityDetailScreen';
-import AthleteLevelScreen from './src/screens/AthleteLevelScreen';
-import WeeklyRecapScreen from './src/screens/WeeklyRecapScreen';
-import SocialChallengesScreen from './src/screens/SocialChallengesScreen';
-import CreateSocialChallengeScreen from './src/screens/CreateSocialChallengeScreen';
-import CelebrationOverlay from './src/components/CelebrationOverlay';
 import { registerForPushNotificationsAsync } from './src/lib/pushNotifications';
 
 const Stack = createNativeStackNavigator();
@@ -60,25 +45,7 @@ const navTheme = {
   colors: { ...DarkTheme.colors, background: colors.bg, card: colors.surface, border: colors.line, primary: colors.accent, text: colors.text },
 };
 
-const linking = {
-  prefixes: ['pista://', 'https://pista-app-five.vercel.app'],
-  config: {
-    screens: {
-      Login: 'login', Onboarding: 'onboarding',
-      Tabs: { path: '', screens: { Inicio: '', Explorar: 'explorar', Registrar: 'registrar', Quedadas: 'quedadas', Perfil: 'perfil' } },
-      CrearPost: 'crear-publicacion', UserProfile: 'usuario/:profileId', PostDetail: 'publicacion/:postId',
-      CreateMeetup: 'quedadas/nueva', MeetupDetail: 'quedadas/:meetupId', Conversation: 'chat/:conversationId',
-      Notifications: 'notificaciones', Places: 'sitios', CreatePlace: 'sitios/nuevo', PlaceDetail: 'sitios/:placeId',
-      Search: 'buscar', EditProfile: 'perfil/editar', EditPost: 'publicacion/:postId/editar', FollowRequests: 'seguimiento/solicitudes',
-      AdminReports: 'admin/reportes', CreateMenu: 'crear', StoryPrivacy: 'historias/privacidad', Challenges: 'retos',
-      Progress: 'progreso', TrainingCalendar: 'calendario', Routes: 'rutas', ActivityDetail: 'actividad/:postId',
-      AthleteLevel: 'nivel', WeeklyRecap: 'semana', SocialChallenges: 'retos/amigos', CreateSocialChallenge: 'retos/amigos/nuevo',
-      Messages: 'mensajes', CreateStory: 'historias/nueva', StoryViewer: 'historias', CreateHighlight: 'destacados/nuevo',
-    },
-  },
-};
-
-const TAB_ICONS = { Inicio: 'home', Explorar: 'compass', Registrar: 'navigate-circle', Quedadas: 'location', Perfil: 'person' };
+const TAB_ICONS = { Feed: 'home', Retos: 'trophy', Quedadas: 'location', Chat: 'chatbubble-ellipses', Perfil: 'person' };
 
 function Tabs() {
   return (
@@ -91,10 +58,10 @@ function Tabs() {
         tabBarIcon: ({ color, size }) => <Ionicons name={TAB_ICONS[route.name]} size={size - 4} color={color} />,
       })}
     >
-      <Tab.Screen name="Inicio" component={FeedScreen} />
-      <Tab.Screen name="Explorar" component={ExploreScreen} />
-      <Tab.Screen name="Registrar" component={RecordActivityScreen} options={{ tabBarLabel: 'Registrar' }} />
+      <Tab.Screen name="Feed" component={FeedScreen} />
+      <Tab.Screen name="Retos" component={RetosScreen} />
       <Tab.Screen name="Quedadas" component={MeetupsScreen} />
+      <Tab.Screen name="Chat" component={ChatListScreen} />
       <Tab.Screen name="Perfil" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -152,21 +119,7 @@ function RootNavigator() {
           <Stack.Screen name="EditPost" component={EditPostScreen} options={{ presentation: 'modal', headerShown: true, title: 'Editar publicación' }} />
           <Stack.Screen name="FollowRequests" component={FollowRequestsScreen} options={{ headerShown: true, title: 'Solicitudes de seguimiento' }} />
           <Stack.Screen name="AdminReports" component={AdminReportsScreen} options={{ headerShown: true, title: 'Reportes' }} />
-          <Stack.Screen name="CreateMenu" component={CreateMenuScreen} options={{ presentation: 'modal', headerShown: true, title: 'Crear' }} />
-          <Stack.Screen name="StoryPrivacy" component={StoryPrivacyScreen} options={{ headerShown: true, title: 'Privacidad de historias' }} />
-          <Stack.Screen name="Challenges" component={RetosScreen} options={{ headerShown: true, title: 'Retos' }} />
-          <Stack.Screen name="Progress" component={ProgressScreen} options={{ headerShown: true, title: 'Mi progreso' }} />
-          <Stack.Screen name="TrainingCalendar" component={TrainingCalendarScreen} options={{ headerShown: true, title: 'Calendario' }} />
-          <Stack.Screen name="Routes" component={RoutesScreen} options={{ headerShown: true, title: 'Mis rutas' }} />
-          <Stack.Screen name="ActivityDetail" component={ActivityDetailScreen} options={{ headerShown: true, title: 'Actividad' }} />
-          <Stack.Screen name="AthleteLevel" component={AthleteLevelScreen} options={{ headerShown: true, title: 'Mi nivel Pista' }} />
-          <Stack.Screen name="WeeklyRecap" component={WeeklyRecapScreen} options={{ headerShown: true, title: 'Mi semana' }} />
-          <Stack.Screen name="SocialChallenges" component={SocialChallengesScreen} options={{ headerShown: true, title: 'Retos con amigos' }} />
-          <Stack.Screen name="CreateSocialChallenge" component={CreateSocialChallengeScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nuevo reto social' }} />
-          <Stack.Screen name="Messages" component={ChatListScreen} options={{ headerShown: true, title: 'Mensajes' }} />
-          <Stack.Screen name="CreateStory" component={CreateStoryScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nueva historia' }} />
-          <Stack.Screen name="StoryViewer" component={StoryViewerScreen} options={{ headerShown: false, animation: 'fade' }} />
-          <Stack.Screen name="CreateHighlight" component={CreateHighlightScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nuevo destacado' }} />
+          <Stack.Screen name="Badges" component={BadgesScreen} options={{ headerShown: true, title: 'Medallas' }} />
         </>
       )}
     </Stack.Navigator>
@@ -177,10 +130,9 @@ export default function App() {
   return (
     <AuthProvider>
       <StatusBar style="light" />
-      <NavigationContainer theme={navTheme} linking={linking}>
+      <NavigationContainer theme={navTheme}>
         <RootNavigator />
       </NavigationContainer>
-      <CelebrationOverlay />
     </AuthProvider>
   );
 }
