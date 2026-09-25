@@ -129,13 +129,29 @@ const tabStyles = StyleSheet.create({
 function useTabSwipe() {
   const indexRef = useRef(0);
 
+  // En web, si dejamos que el gesto se decida en la fase de "bubble" (la
+  // normal), el navegador a veces gana la carrera y arranca su selección de
+  // texto nativa antes de que el PanResponder llegue a reclamar el gesto,
+  // dejando el dedo/ratón "seleccionando" en vez de cambiar de pestaña.
+  // Decidiéndolo en la fase de "capture" (de fuera hacia dentro, antes de
+  // que el texto la vea) evitamos esa carrera, y hacemos preventDefault en
+  // cuanto detectamos que es un swipe horizontal para cancelar la selección.
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => false,
     onStartShouldSetPanResponderCapture: () => false,
     onMoveShouldSetPanResponder: (_evt, gesture) => (
       Math.abs(gesture.dx) > 32 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 2.5
     ),
+    onMoveShouldSetPanResponderCapture: (_evt, gesture) => (
+      Math.abs(gesture.dx) > 32 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 2.5
+    ),
     onPanResponderTerminationRequest: () => true,
+    onPanResponderGrant: (evt) => {
+      if (Platform.OS === 'web') evt?.preventDefault?.();
+    },
+    onPanResponderMove: (evt) => {
+      if (Platform.OS === 'web') evt?.preventDefault?.();
+    },
     onPanResponderRelease: (_evt, gesture) => {
       if (Math.abs(gesture.dx) < 60 || !navigationRef.isReady?.()) return;
       const direction = gesture.dx < 0 ? 1 : -1;
@@ -154,7 +170,10 @@ function useTabSwipe() {
 function Tabs() {
   const swipe = useTabSwipe();
   return (
-    <View style={{ flex: 1 }} {...swipe.panHandlers}>
+    <View
+      style={Platform.OS === 'web' ? { flex: 1, touchAction: 'pan-y' } : { flex: 1 }}
+      {...swipe.panHandlers}
+    >
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
