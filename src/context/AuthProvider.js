@@ -39,6 +39,18 @@ export function AuthProvider({ children }) {
       profileRow = result.data;
       if (result.error) console.warn('No se pudo crear el perfil:', result.error.message);
     }
+
+    // Si la cuenta estaba desactivada temporalmente, volver a entrar la reactiva sola.
+    if (profileRow?.deactivated_at) {
+      const { data: reactivated } = await supabase
+        .from('profiles')
+        .update({ deactivated_at: null })
+        .eq('id', userId)
+        .select('*')
+        .maybeSingle();
+      if (reactivated) profileRow = reactivated;
+    }
+
     setProfile(profileRow || null);
 
     const { data: sportsRows } = await supabase
