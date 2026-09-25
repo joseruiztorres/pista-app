@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
-import { checkActivityBadges } from '../lib/awardBadges';
 import { colors, shape } from '../lib/theme';
 
 export default function DailyChallengeCard({ navigation }) {
@@ -29,13 +28,6 @@ export default function DailyChallengeCard({ navigation }) {
 
   useEffect(() => { load(); }, [load]);
 
-  async function markDone(sportId) {
-    if (!user) return;
-    await supabase.from('daily_checkins').upsert({ profile_id: user.id, sport_id: sportId, check_date: new Date().toISOString().slice(0, 10) }, { onConflict: 'profile_id,check_date' });
-    await checkActivityBadges(user.id);
-    load();
-  }
-
   if (doneToday === null) return null;
 
   if (doneToday) {
@@ -49,7 +41,7 @@ export default function DailyChallengeCard({ navigation }) {
           </View>
         </View>
         <Text style={styles.title}>Racha de {streak} días</Text>
-        <Text style={styles.body}>Has marcado tu actividad de hoy. Vuelve mañana para no cortarla.</Text>
+        <Text style={styles.body}>Has registrado tu actividad de hoy. Vuelve mañana para no cortarla.</Text>
         <Pressable style={styles.more} onPress={() => navigation?.navigate('Challenges')}><Text style={styles.moreText}>Ver objetivos y medallas</Text><Ionicons name="arrow-forward" size={14} color={colors.bg} /></Pressable>
       </View>
     );
@@ -65,11 +57,14 @@ export default function DailyChallengeCard({ navigation }) {
         </View>
       </View>
       <Text style={styles.title}>¿Qué has hecho hoy?</Text>
-      <Text style={styles.body}>Marca tu actividad para no cortar la racha.</Text>
+      {/* La racha ya no se marca con un toque: cada chip te lleva a Registrar
+          para que dejes constancia real de la sesión (ruta GPS o, en gimnasio
+          y calistenia, duración y sensación). Solo eso cuenta para la racha. */}
+      <Text style={styles.body}>Elige tu deporte y registra la sesión para no cortar la racha.</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4 }}>
         <View style={styles.row}>
           {(sports.length ? sports : []).map((s) => (
-            <Pressable key={s.id} style={styles.qbtn} onPress={() => markDone(s.id)}>
+            <Pressable key={s.id} style={styles.qbtn} onPress={() => navigation?.navigate('Registrar', { targetSportId: s.id })}>
               <Ionicons name={iconFor(s.id)} size={18} color={colors.bg} />
               <Text style={styles.qbtnText}>{s.name}</Text>
             </Pressable>
