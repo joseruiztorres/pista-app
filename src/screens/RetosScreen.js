@@ -9,6 +9,7 @@ import { iconForBadge } from '../lib/badges';
 import { activityMetric, dateKey, formatMetric, metricLabel, progressPercent, startOfWeek } from '../lib/engagement';
 import { awardBadge, checkActivityBadges } from '../lib/awardBadges';
 import LevelCard from '../components/LevelCard';
+import { alert } from '../lib/alert';
 
 const GOAL_PRESETS = { sessions: [2, 3, 5, 7], distance_km: [5, 10, 20, 50], minutes: [60, 120, 180, 300] };
 const DIFFICULTY_ORDER = { facil: 0, normal: 1, dificil: 2, epico: 3 };
@@ -93,12 +94,12 @@ export default function RetosScreen({ navigation }) {
 
   async function join(challenge) {
     const { error } = await supabase.from('challenge_members').insert({ profile_id: user.id, challenge_id: challenge.id });
-    if (error) Alert.alert('No se pudo aceptar el reto', error.message); else load();
+    if (error) alert('No se pudo aceptar el reto', error.message); else load();
   }
 
   async function saveGoal() {
     const { error } = await supabase.from('weekly_goals').upsert({ profile_id: user.id, metric: goalMetric, target: goalTarget, week_start: dateKey(weekStart) }, { onConflict: 'profile_id,metric,week_start' });
-    if (error) Alert.alert('No se pudo guardar', error.message); else { setShowBuilder(false); load(); }
+    if (error) alert('No se pudo guardar', error.message); else { setShowBuilder(false); load(); }
   }
 
   const joined = challenges.filter((c) => members[c.id] && !members[c.id].completed_at);
