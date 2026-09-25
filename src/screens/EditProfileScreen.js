@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import Avatar from '../components/Avatar';
 import { colors, shape } from '../lib/theme';
+import { extFromAsset } from '../lib/media';
 
 export default function EditProfileScreen({ navigation }) {
   const { user, profile, refreshProfile } = useAuth();
@@ -25,7 +26,7 @@ export default function EditProfileScreen({ navigation }) {
     const asset = result.assets[0];
     setUploadingAvatar(true);
     try {
-      const ext = asset.uri.split('.').pop().split('?')[0] || 'jpg';
+      const ext = extFromAsset(asset, 'jpg');
       const path = `${user.id}/avatar.${ext}`;
       const response = await fetch(asset.uri);
       const blob = await response.blob();
