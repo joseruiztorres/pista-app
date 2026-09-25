@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
+import { View, Text, FlatList, Pressable, RefreshControl, StyleSheet } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import SportLoader from '../components/SportLoader';
@@ -18,6 +18,7 @@ export default function ChatListScreen({ navigation }) {
   const { user } = useAuth();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -56,6 +57,12 @@ export default function ChatListScreen({ navigation }) {
     setLoading(false);
   }, [user]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
+
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
     const unsub = navigation.addListener('focus', load);
@@ -72,6 +79,7 @@ export default function ChatListScreen({ navigation }) {
           data={conversations}
           keyExtractor={(c) => c.id}
           contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 40 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} />}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyText}>Todavía no tienes conversaciones. Escribe a alguien desde su perfil.</Text>

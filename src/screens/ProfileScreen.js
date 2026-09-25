@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, RefreshControl, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
@@ -17,6 +17,7 @@ export default function ProfileScreen({ navigation }) {
   const [pendingRequests, setPendingRequests] = useState(0);
   const [progress, setProgress] = useState({ streak: 0, week: 0, meetups: 0 });
   const [levelProgress, setLevelProgress] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -40,10 +41,20 @@ export default function ProfileScreen({ navigation }) {
     setLevelProgress(gamification?.progress || null);
   }, [user]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
+
   useEffect(() => { load(); }, [load]);
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} />}
+    >
       <Avatar url={profile?.avatar_url} name={profile?.display_name || profile?.username} size={72} />
       <Text style={styles.name}>{profile?.display_name || profile?.username}</Text>
       <Text style={styles.handle}>@{profile?.username}</Text>

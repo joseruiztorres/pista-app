@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import SportLoader from '../components/SportLoader';
@@ -31,6 +31,7 @@ export default function RetosScreen({ navigation }) {
   const [goalTarget, setGoalTarget] = useState(3);
   const [showBuilder, setShowBuilder] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [levelProgress, setLevelProgress] = useState(null);
   const [personalChallenges, setPersonalChallenges] = useState([]);
   const weekStart = useMemo(() => startOfWeek(), []);
@@ -67,6 +68,12 @@ export default function RetosScreen({ navigation }) {
     setPersonalChallenges(gamification?.personal || []);
     setLoading(false);
   }, [user, weekStart]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -106,7 +113,11 @@ export default function RetosScreen({ navigation }) {
   if (loading) return <View style={styles.center}><SportLoader label="Preparando tus retos" /></View>;
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} />}
+    >
       <View style={styles.hero}>
         <View style={styles.heroIcon}><Ionicons name="flame" size={26} color={colors.bg} /></View>
         <View style={{ flex: 1 }}>

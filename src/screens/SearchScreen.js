@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, FlatList, Pressable, StyleSheet } from 'react-native';
+import { View, Text, TextInput, FlatList, Pressable, RefreshControl, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import SportLoader from '../components/SportLoader';
@@ -13,6 +13,13 @@ export default function SearchScreen({ navigation, embedded = false }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  function onRefresh() {
+    setRefreshing(true);
+    setRefreshKey((k) => k + 1);
+  }
 
   useEffect(() => {
     const q = query.trim();
@@ -50,6 +57,7 @@ export default function SearchScreen({ navigation, embedded = false }) {
         if (active) {
           setResults(suggested.slice(0, 20));
           setLoading(false);
+          setRefreshing(false);
         }
       })();
       return () => { active = false; };
@@ -63,9 +71,10 @@ export default function SearchScreen({ navigation, embedded = false }) {
         .limit(20);
       setResults((data || []).filter((p) => p.id !== user?.id));
       setLoading(false);
+      setRefreshing(false);
     }, 250);
     return () => clearTimeout(timer);
-  }, [query, user, sportIds]);
+  }, [query, user, sportIds, refreshKey]);
 
   return (
     <View style={styles.screen}>
@@ -88,6 +97,7 @@ export default function SearchScreen({ navigation, embedded = false }) {
           data={results}
           keyExtractor={(p) => p.id}
           contentContainerStyle={{ padding: 16, paddingTop: 6, gap: 10 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} />}
           ListHeaderComponent={!query.trim() && results.length ? <Text style={styles.suggestTitle}>Personas para ti</Text> : null}
           ListEmptyComponent={
             query.trim()

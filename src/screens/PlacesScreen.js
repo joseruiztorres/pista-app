@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, TextInput } from 'react-native';
+import { View, Text, FlatList, Pressable, RefreshControl, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import SportLoader from '../components/SportLoader';
@@ -33,12 +33,19 @@ export default function PlacesScreen({ navigation }) {
   const [places, setPlaces] = useState([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setPlaces(await loadPlacesWithRatings());
     setLoading(false);
   }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
@@ -77,6 +84,7 @@ export default function PlacesScreen({ navigation }) {
           data={filtered}
           keyExtractor={(p) => p.id}
           contentContainerStyle={{ padding: 16, paddingTop: 6, gap: 10, paddingBottom: 40 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} />}
           ListEmptyComponent={<Text style={styles.empty}>Todavía no hay sitios. Añade el primero.</Text>}
           renderItem={({ item }) => (
             <Pressable style={styles.card} onPress={() => navigation.navigate('PlaceDetail', { placeId: item.id })}>

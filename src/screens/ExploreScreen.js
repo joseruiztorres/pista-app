@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import SearchScreen from './SearchScreen';
@@ -14,6 +14,7 @@ export default function ExploreScreen({ navigation }) {
   const [section, setSection] = useState('personas');
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadVideos = useCallback(async () => {
     setLoading(true);
@@ -22,6 +23,12 @@ export default function ExploreScreen({ navigation }) {
     setVideos(data || []);
     setLoading(false);
   }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadVideos();
+    setRefreshing(false);
+  }, [loadVideos]);
 
   useEffect(() => { if (section === 'videos') loadVideos(); }, [section, loadVideos]);
 
@@ -42,6 +49,7 @@ export default function ExploreScreen({ navigation }) {
           data={videos}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} />}
           ListEmptyComponent={<View style={styles.empty}><Ionicons name="videocam-outline" size={34} color={colors.textDim} /><Text style={styles.emptyTitle}>Todavía no hay vídeos</Text><Text style={styles.emptyText}>Los primeros vídeos deportivos aparecerán aquí.</Text></View>}
           renderItem={({ item }) => {
             const video = item.post_media?.find((media) => media.media_type === 'video');

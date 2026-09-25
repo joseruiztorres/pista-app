@@ -11,6 +11,11 @@ import { colors, shape } from '../lib/theme';
 import { checkActivityBadges } from '../lib/awardBadges';
 
 const ACTIVITY_SPORTS = ['running', 'ciclismo', 'caminar', 'senderismo', 'trail', 'patinaje', 'escalada'];
+// Deportes de fuerza/sala: no hay ruta GPS que grabar, así que en vez de
+// dejar que un simple toque marque la racha (fácil de falsear), aquí se pide
+// un mínimo real: cuánto ha durado la sesión y cómo ha ido.
+const FUERZA_SPORTS = ['gym', 'crossfit', 'calistenia', 'halterofilia'];
+const EFFORT_LABELS = { suave: 'Suave', normal: 'Normal', intenso: 'A tope' };
 
 function cropRoute(route, meters = 200) {
   if (!route || route.length < 3) return route;
@@ -47,9 +52,13 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
   const [climbVertical, setClimbVertical] = useState('');
   const [climbDuration, setClimbDuration] = useState('60');
   const [recordApproach, setRecordApproach] = useState(false);
+  const [fuerzaDuration, setFuerzaDuration] = useState('45');
+  const [fuerzaEffort, setFuerzaEffort] = useState('normal');
   const [guideRoute, setGuideRoute] = useState(Array.isArray(navRoute?.params?.targetRoute) ? navRoute.params.targetRoute : null);
   const [sourcePostId, setSourcePostId] = useState(navRoute?.params?.sourcePostId || null);
   const scrollRef = useRef(null);
+  const isClimbing = sportId === 'escalada';
+  const isFuerza = FUERZA_SPORTS.includes(sportId);
 
   function finishActivity(nextActivity) {
     setActivity(nextActivity);
@@ -63,7 +72,7 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
   }
 
   useEffect(() => {
-    supabase.from('sports').select('*').in('id', ACTIVITY_SPORTS).order('name').then(({ data }) => setSports(data || []));
+    supabase.from('sports').select('*').in('id', [...ACTIVITY_SPORTS, ...FUERZA_SPORTS]).order('name').then(({ data }) => setSports(data || []));
     AsyncStorage.getItem('@pista:last_gps_sport').then((value) => {
       if (!navRoute?.params?.targetSportId && value && ACTIVITY_SPORTS.includes(value)) setSportId(value);
     });
@@ -77,6 +86,10 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
       setSourcePostId(navRoute?.params?.sourcePostId || null);
       if (nextSport && ACTIVITY_SPORTS.includes(nextSport)) setSportId(nextSport);
       setActivity(null);
+    } else if (nextSport && (ACTIVITY_SPORTS.includes(nextSport) || FUERZA_SPORTS.includes(nextSport))) {
+      // Llegada desde el atajo "Reto de hoy": preselecciona el deporte
+      // pulsado para que solo falte confirmar la sesión, no repetirla.
+      setSportId(nextSport);
     }
   }, [navRoute?.params?.sourcePostId, navRoute?.params?.targetRoute, navRoute?.params?.targetSportId]);
 
@@ -91,8 +104,8 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
   }, [activity]);
 
   async function publish() {
-    const isClimbing = sportId === 'escalada';
-    if ((!activity && !isClimbing) || (isClimbing && recordApproach && !activity) || !user || saving) return;
+    const fuerzaValid = isFuerza && Number(fuerzaDuration) > 0;
+    if ((!activity && !isClimbing && !isFuerza) || (isClimbing && recordApproach && !activity) || (isFuerza && !fuerzaValid) || !user || saving) return;
     setSaving(true);
     try {
       const publicRoute = activity ? (hideEnds ? cropRoute(activity.route) : activity.route) : null;
@@ -101,6 +114,8 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
         attempts: Number(climbAttempts || 0), vertical_m: Number(climbVertical || 0), duration_min: Number(climbDuration || 0),
         route: publicRoute, approach_distance_km: activity ? Number(activity.distanceKm.toFixed(2)) : null,
         approach_duration_min: activity ? Math.max(1, Math.round(activity.durationSec / 60)) : null, hidden_ends: activity ? hideEnds : false,
+      } : isFuerza ? {
+        activity_kind: 'fuerza', duration_min: Number(fuerzaDuration || 0), effort: fuerzaEffort,
       } : {
         route: publicRoute, distance_km: Number(activity.distanceKm.toFixed(2)), duration_min: Math.max(1, Math.round(activity.durationSec / 60)),
         duration_sec: activity.durationSec, elevation_m: activity.elevationM || 0,
@@ -121,12 +136,17 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
       clearGuide();
       setCaption('');
       setClimbRoutes(''); setClimbGrade(''); setClimbAttempts(''); setClimbVertical('');
-      Alert.alert('Actividad guardada', 'El recorrido ya aparece en tu perfil y en el feed.');
+      setFuerzaDuration('45'); setFuerzaEffort('normal');
+      Alert.alert('Actividad guardada', 'Ya aparece en tu perfil y en el feed, y cuenta para tu racha de hoy.');
       navigation.navigate('Inicio');
     } catch (error) {
       Alert.alert('No se pudo guardar', error.message);
     } finally { setSaving(false); }
   }
+
+  const publishDisabled = saving
+    || (sportId === 'escalada' && recordApproach && !activity)
+    || (isFuerza && !(Number(fuerzaDuration) > 0));
 
   return (
     <ScrollView ref={scrollRef} style={styles.screen} contentContainerStyle={styles.content}>
@@ -152,7 +172,7 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
       )}
 
       <View style={styles.card}>
-        {sportId === 'escalada' ? (
+        {isClimbing ? (
           <View style={styles.climbForm}>
             <View style={styles.climbIntro}><Ionicons name="trending-up" size={22} color={colors.amber} /><View style={{ flex: 1 }}><Text style={styles.climbTitle}>Sesión de escalada</Text><Text style={styles.hint}>Registra vías, grado y altura. El GPS puede guardar la aproximación exterior.</Text></View></View>
             <Text style={styles.sectionLabel}>Tipo</Text><View style={styles.row}>{[['rocodromo','Rocódromo'],['roca','Roca'],['boulder','Boulder']].map(([id,label]) => <Choice key={id} active={climbType === id} label={label} onPress={() => setClimbType(id)} />)}</View>
@@ -160,10 +180,17 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
             <Pressable style={styles.privacyRow} onPress={() => { setRecordApproach((value) => !value); setActivity(null); }}><Ionicons name="trail-sign-outline" size={20} color={recordApproach ? colors.accentStrong : colors.textDim} /><View style={{ flex: 1 }}><Text style={styles.privacyTitle}>Grabar aproximación GPS</Text><Text style={styles.hint}>Para escalada exterior: guarda el camino hasta la zona.</Text></View><Ionicons name={recordApproach ? 'checkbox' : 'square-outline'} size={20} color={colors.accentStrong} /></Pressable>
             {recordApproach && <RouteRecorder onFinish={finishActivity} targetRoute={guideRoute} />}
           </View>
+        ) : isFuerza ? (
+          <View style={styles.climbForm}>
+            <View style={styles.climbIntro}><Ionicons name="barbell" size={22} color={colors.amber} /><View style={{ flex: 1 }}><Text style={styles.climbTitle}>Sesión de fuerza</Text><Text style={styles.hint}>Sin GPS: cuenta lo que registres aquí, no un simple toque. Pon la duración real y cómo te ha ido.</Text></View></View>
+            <View style={styles.climbGrid}><SmallInput label="Duración (min)" value={fuerzaDuration} onChangeText={setFuerzaDuration} placeholder="45" /></View>
+            <Text style={styles.sectionLabel}>¿Cómo te sentiste?</Text>
+            <View style={styles.row}>{Object.entries(EFFORT_LABELS).map(([id, label]) => <Choice key={id} active={fuerzaEffort === id} label={label} onPress={() => setFuerzaEffort(id)} />)}</View>
+          </View>
         ) : <><RouteRecorder onFinish={finishActivity} targetRoute={guideRoute} />{!activity && <Text style={styles.hint}>Mantén Pista abierta durante esta primera versión del registro. La aplicación móvil permitirá grabar también con la pantalla bloqueada.</Text>}</>}
       </View>
 
-      {(activity || sportId === 'escalada') && (
+      {(activity || isClimbing || isFuerza) && (
         <>
           {activity && <View style={styles.finishedBanner}><Ionicons name="checkmark-circle" size={22} color={colors.accentStrong} /><View style={{ flex: 1 }}><Text style={styles.finishedTitle}>Grabación terminada</Text><Text style={styles.hint}>Revisa los datos y pulsa “Guardar y compartir” para que aparezca en Mis rutas.</Text></View></View>}
           {activity && <View style={styles.metrics}>
@@ -180,7 +207,7 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
             <View style={{ flex: 1 }}><Text style={styles.privacyTitle}>Ocultar inicio y final</Text><Text style={styles.hint}>Recorta aproximadamente 200 m para no revelar casa o trabajo.</Text></View>
             <Ionicons name={hideEnds ? 'checkbox' : 'square-outline'} size={20} color={colors.accentStrong} />
           </Pressable>}
-          <Pressable style={[styles.publish, sportId === 'escalada' && recordApproach && !activity && { opacity: 0.45 }]} onPress={publish} disabled={saving || (sportId === 'escalada' && recordApproach && !activity)}><Text style={styles.publishText}>{saving ? 'Guardando…' : sportId === 'escalada' && recordApproach && !activity ? 'Termina la aproximación para guardar' : 'Guardar y compartir'}</Text></Pressable>
+          <Pressable style={[styles.publish, publishDisabled && { opacity: 0.45 }]} onPress={publish} disabled={publishDisabled}><Text style={styles.publishText}>{saving ? 'Guardando…' : sportId === 'escalada' && recordApproach && !activity ? 'Termina la aproximación para guardar' : isFuerza && !(Number(fuerzaDuration) > 0) ? 'Pon la duración de la sesión' : 'Guardar y compartir'}</Text></Pressable>
         </>
       )}
     </ScrollView>

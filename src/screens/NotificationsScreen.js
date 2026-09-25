@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
+import { View, Text, FlatList, Pressable, RefreshControl, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import SportLoader from '../components/SportLoader';
@@ -26,6 +26,7 @@ export default function NotificationsScreen({ navigation }) {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -45,6 +46,12 @@ export default function NotificationsScreen({ navigation }) {
     }
   }, [user]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
+
   useEffect(() => { load(); }, [load]);
 
   function onPress(n) {
@@ -62,6 +69,7 @@ export default function NotificationsScreen({ navigation }) {
           data={items}
           keyExtractor={(n) => n.id}
           contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 40 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} />}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyText}>Todavía no tienes notificaciones.</Text>

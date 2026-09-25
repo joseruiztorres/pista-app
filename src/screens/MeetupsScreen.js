@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
+import { View, Text, FlatList, Pressable, RefreshControl, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
@@ -24,6 +24,7 @@ export default function MeetupsScreen({ navigation }) {
   const [meetups, setMeetups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('lista');
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -47,6 +48,12 @@ export default function MeetupsScreen({ navigation }) {
     setMeetups(data || []);
     setLoading(false);
   }, [filter, period]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
@@ -110,6 +117,7 @@ export default function MeetupsScreen({ navigation }) {
         data={meetups}
         keyExtractor={(m) => m.id}
         contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} />}
         ListEmptyComponent={!loading && (
           <View style={styles.empty}>
             <Ionicons name="location-outline" size={26} color={colors.textDim} />
