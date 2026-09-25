@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { activityMetric, dateKey, startOfWeek } from './engagement';
+import { queueCelebrations } from './celebrations';
 
 export const LEVELS = [
   { level: 1, name: 'En marcha', min: 0 },
@@ -110,7 +111,7 @@ function buildStats(posts, checkins, plans, meetups, streak) {
 export async function syncGamification(profileId) {
   if (!profileId) return null;
   const week = dateKey(startOfWeek());
-  const [postsRes, checkinsRes, plansRes, meetupsRes, badgesRes, catalogRes, personalRes, streakRes] = await Promise.all([
+  const [postsRes, checkinsRes, plansRes, meetupsRes, badgesRes, catalogRes, personalRes, streakRes, previousProgressRes] = await Promise.all([
     supabase.from('posts').select('sport_id, details, created_at').eq('author_id', profileId),
     supabase.from('daily_checkins').select('sport_id, check_date').eq('profile_id', profileId),
     supabase.from('training_events').select('id').eq('profile_id', profileId).eq('status', 'completed'),
@@ -119,6 +120,7 @@ export async function syncGamification(profileId) {
     supabase.from('challenge_members').select('challenge_id, completed_at, challenges(points)').eq('profile_id', profileId),
     supabase.from('personal_challenges').select('*').eq('profile_id', profileId),
     supabase.rpc('current_streak', { p_profile_id: profileId }),
+    supabase.from('profile_progress').select('level').eq('profile_id', profileId).maybeSingle(),
   ]);
   const posts = postsRes.data || [];
   const checkins = checkinsRes.data || [];
@@ -136,6 +138,7 @@ export async function syncGamification(profileId) {
   const completedNow = personal.filter((challenge) => !challenge.completed_at && activityMetric(challenge.metric, posts, checkins, { since: challenge.starts_at, sportId: challenge.sport_id }) >= Number(challenge.target));
   if (completedNow.length) {
     await Promise.all(completedNow.map((challenge) => supabase.from('personal_challenges').update({ completed_at: new Date().toISOString() }).eq('id', challenge.id).eq('profile_id', profileId)));
+    await queueCelebrations(profileId, completedNow.map((challenge) => ({ type: 'challenge', id: challenge.id, name: challenge.title, description: 'Has completado uno de tus retos personalizados de la semana.', icon: challenge.icon_key || 'flag-outline', xp: challenge.points })));
     const done = new Set(completedNow.map((item) => item.id));
     personal = personal.map((item) => done.has(item.id) ? { ...item, completed_at: new Date().toISOString() } : item);
     allPersonal = allPersonal.map((item) => done.has(item.id) ? { ...item, completed_at: new Date().toISOString() } : item);
@@ -148,5 +151,9 @@ export async function syncGamification(profileId) {
   const identity = athleteIdentity(stats);
   const progress = { profile_id: profileId, xp, level: level.level, athlete_type: identity.id, athlete_label: identity.label, stats, calculated_at: new Date().toISOString() };
   await supabase.from('profile_progress').upsert(progress, { onConflict: 'profile_id' });
+  const previousLevel = Number(previousProgressRes.data?.level || 0);
+  if (previousLevel > 0 && level.level > previousLevel) {
+    await queueCelebrations(profileId, [{ type: 'level', id: String(level.level), level: level.level, name: level.name, description: `Has alcanzado ${xp.toLocaleString('es-ES')} XP. Tu constancia te lleva al siguiente tramo.`, icon: 'trophy', xp: 0 }]);
+  }
   return { progress, identity, personal };
 }

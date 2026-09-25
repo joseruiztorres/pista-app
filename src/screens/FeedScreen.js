@@ -9,6 +9,7 @@ import DailyChallengeCard from '../components/DailyChallengeCard';
 import SportLoader from '../components/SportLoader';
 import StoriesBar from '../components/StoriesBar';
 import { colors } from '../lib/theme';
+import MotivationCard from '../components/MotivationCard';
 
 const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position, media_type), comments(count), place:place_id(name)';
 const PAGE_SIZE = 15;
@@ -168,6 +169,7 @@ export default function FeedScreen({ navigation }) {
           <View>
             <StoriesBar navigation={navigation} />
             {filter === 'todo' && <DailyChallengeCard navigation={navigation} />}
+            {filter === 'todo' && <MotivationCard navigation={navigation} />}
           </View>
         }
         ItemSeparatorComponent={() => <View style={{ height: 14 }} />}

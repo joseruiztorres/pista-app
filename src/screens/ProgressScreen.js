@@ -91,6 +91,7 @@ export default function ProgressScreen({ navigation }) {
       </View>
 
       <Pressable style={styles.action} onPress={() => navigation.navigate('TrainingCalendar')}><Ionicons name="calendar" size={20} color={colors.bg} /><View style={{ flex: 1 }}><Text style={styles.actionTitle}>Planificar entrenamientos</Text><Text style={styles.actionText}>Pon fecha a tu próxima sesión.</Text></View><Ionicons name="chevron-forward" size={18} color={colors.bg} /></Pressable>
+      <Pressable style={styles.secondary} onPress={() => navigation.navigate('WeeklyRecap')}><Ionicons name="share-social-outline" size={19} color={colors.amber} /><Text style={styles.secondaryText}>Ver y compartir mi semana</Text></Pressable>
       <Pressable style={styles.secondary} onPress={() => navigation.navigate('Challenges')}><Ionicons name="trophy-outline" size={19} color={colors.accentStrong} /><Text style={styles.secondaryText}>Ver objetivos, retos y medallas</Text></Pressable>
     </ScrollView>
   );

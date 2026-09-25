@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
-import { checkActivityBadges, checkFirstPostBadge, checkStreakBadges } from '../lib/awardBadges';
+import { checkActivityBadges, checkFirstPostBadge } from '../lib/awardBadges';
 import RouteRecorder from '../components/RouteRecorder';
 import VideoPlayer from '../components/VideoPlayer';
 import { colors } from '../lib/theme';
@@ -193,7 +193,7 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
       await checkFirstPostBadge(user.id);
       if (type !== 'resena') {
         await supabase.from('daily_checkins').upsert({ profile_id: user.id, sport_id: sportId, check_date: new Date().toISOString().slice(0, 10) }, { onConflict: 'profile_id,check_date' });
-        await Promise.all([checkStreakBadges(user.id), checkActivityBadges(user.id)]);
+        await checkActivityBadges(user.id);
       }
       await AsyncStorage.setItem('@pista:last_sport', sportId);
       navigation.goBack();

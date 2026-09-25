@@ -46,6 +46,8 @@ import TrainingCalendarScreen from './src/screens/TrainingCalendarScreen';
 import RoutesScreen from './src/screens/RoutesScreen';
 import ActivityDetailScreen from './src/screens/ActivityDetailScreen';
 import AthleteLevelScreen from './src/screens/AthleteLevelScreen';
+import WeeklyRecapScreen from './src/screens/WeeklyRecapScreen';
+import CelebrationOverlay from './src/components/CelebrationOverlay';
 import { registerForPushNotificationsAsync } from './src/lib/pushNotifications';
 
 const Stack = createNativeStackNavigator();
@@ -138,6 +140,7 @@ function RootNavigator() {
           <Stack.Screen name="Routes" component={RoutesScreen} options={{ headerShown: true, title: 'Mis rutas' }} />
           <Stack.Screen name="ActivityDetail" component={ActivityDetailScreen} options={{ headerShown: true, title: 'Actividad' }} />
           <Stack.Screen name="AthleteLevel" component={AthleteLevelScreen} options={{ headerShown: true, title: 'Mi nivel Pista' }} />
+          <Stack.Screen name="WeeklyRecap" component={WeeklyRecapScreen} options={{ headerShown: true, title: 'Mi semana' }} />
           <Stack.Screen name="Messages" component={ChatListScreen} options={{ headerShown: true, title: 'Mensajes' }} />
           <Stack.Screen name="CreateStory" component={CreateStoryScreen} options={{ presentation: 'modal', headerShown: true, title: 'Nueva historia' }} />
           <Stack.Screen name="StoryViewer" component={StoryViewerScreen} options={{ headerShown: false, animation: 'fade' }} />
@@ -155,6 +158,7 @@ export default function App() {
       <NavigationContainer theme={navTheme}>
         <RootNavigator />
       </NavigationContainer>
+      <CelebrationOverlay />
     </AuthProvider>
   );
 }

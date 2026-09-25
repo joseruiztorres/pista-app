@@ -106,6 +106,10 @@ export default function ProfileScreen({ navigation }) {
           <Ionicons name="map-outline" size={18} color={colors.accentStrong} />
           <Text style={styles.quickText}>Mis rutas</Text>
         </Pressable>
+        <Pressable style={[styles.quickAction, styles.routeAction]} onPress={() => navigation.navigate('WeeklyRecap')}>
+          <Ionicons name="share-social-outline" size={18} color={colors.amber} />
+          <Text style={styles.quickText}>Mi resumen semanal</Text>
+        </Pressable>
       </View>
 
       <HighlightsRow profileId={user?.id} isMine navigation={navigation} />

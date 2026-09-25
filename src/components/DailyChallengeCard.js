@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
-import { checkActivityBadges, checkStreakBadges } from '../lib/awardBadges';
+import { checkActivityBadges } from '../lib/awardBadges';
 import { colors } from '../lib/theme';
 
 export default function DailyChallengeCard({ navigation }) {
@@ -32,7 +32,7 @@ export default function DailyChallengeCard({ navigation }) {
   async function markDone(sportId) {
     if (!user) return;
     await supabase.from('daily_checkins').upsert({ profile_id: user.id, sport_id: sportId, check_date: new Date().toISOString().slice(0, 10) }, { onConflict: 'profile_id,check_date' });
-    await Promise.all([checkStreakBadges(user.id), checkActivityBadges(user.id)]);
+    await checkActivityBadges(user.id);
     load();
   }
 

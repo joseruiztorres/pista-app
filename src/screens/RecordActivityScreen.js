@@ -8,7 +8,7 @@ import { iconFor } from '../lib/sports';
 import { haversineKm } from '../lib/geo';
 import RouteRecorder from '../components/RouteRecorder';
 import { colors } from '../lib/theme';
-import { checkActivityBadges, checkStreakBadges } from '../lib/awardBadges';
+import { checkActivityBadges } from '../lib/awardBadges';
 
 const ACTIVITY_SPORTS = ['running', 'ciclismo', 'caminar', 'senderismo', 'trail', 'patinaje', 'escalada'];
 
@@ -116,7 +116,7 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
         AsyncStorage.setItem('@pista:last_gps_sport', sportId),
         supabase.from('daily_checkins').upsert({ profile_id: user.id, sport_id: sportId, check_date: new Date().toISOString().slice(0, 10) }, { onConflict: 'profile_id,check_date' }),
       ]);
-      await Promise.all([checkStreakBadges(user.id), checkActivityBadges(user.id)]);
+      await checkActivityBadges(user.id);
       setActivity(null);
       clearGuide();
       setCaption('');
