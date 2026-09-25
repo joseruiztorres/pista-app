@@ -9,6 +9,7 @@ import { haversineKm } from '../lib/geo';
 import RouteRecorder from '../components/RouteRecorder';
 import { colors, shape } from '../lib/theme';
 import { checkActivityBadges } from '../lib/awardBadges';
+import { alert } from '../lib/alert';
 
 const ACTIVITY_SPORTS = ['running', 'ciclismo', 'caminar', 'senderismo', 'trail', 'patinaje', 'escalada'];
 // Deportes de fuerza/sala: no hay ruta GPS que grabar, así que en vez de
@@ -137,10 +138,10 @@ export default function RecordActivityScreen({ navigation, route: navRoute }) {
       setCaption('');
       setClimbRoutes(''); setClimbGrade(''); setClimbAttempts(''); setClimbVertical('');
       setFuerzaDuration('45'); setFuerzaEffort('normal');
-      Alert.alert('Actividad guardada', 'Ya aparece en tu perfil y en el feed, y cuenta para tu racha de hoy.');
+      alert('Actividad guardada', 'Ya aparece en tu perfil y en el feed, y cuenta para tu racha de hoy.');
       navigation.navigate('Inicio');
     } catch (error) {
-      Alert.alert('No se pudo guardar', error.message);
+      alert('No se pudo guardar', error.message);
     } finally { setSaving(false); }
   }
 
