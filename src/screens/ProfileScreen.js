@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, RefreshControl, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, RefreshControl, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
@@ -48,6 +48,28 @@ export default function ProfileScreen({ navigation }) {
   }, [load]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleDeleteAccount = useCallback(() => {
+    Alert.alert(
+      'Eliminar cuenta',
+      'Se borrarán tu perfil, publicaciones, rutas, mensajes y toda tu actividad de forma permanente. Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar cuenta',
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await supabase.rpc('delete_own_account');
+            if (error) {
+              Alert.alert('No se pudo eliminar la cuenta', error.message);
+              return;
+            }
+            await signOut().catch(() => {});
+          },
+        },
+      ],
+    );
+  }, [signOut]);
 
   return (
     <ScrollView
@@ -140,6 +162,11 @@ export default function ProfileScreen({ navigation }) {
         <Ionicons name="log-out-outline" size={18} color={colors.clay} />
         <Text style={styles.logoutText}>Cerrar sesión</Text>
       </Pressable>
+
+      <Pressable style={styles.deleteAccount} onPress={handleDeleteAccount}>
+        <Ionicons name="trash-outline" size={15} color={colors.textDim} />
+        <Text style={styles.deleteAccountText}>Eliminar cuenta</Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -174,4 +201,6 @@ const styles = StyleSheet.create({
   badgeText: { color: colors.textDim, fontSize: 11, fontWeight: '600' },
   logout: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: colors.line, ...shape.button, paddingVertical: 12, paddingHorizontal: 24, marginTop: 32 },
   logoutText: { color: colors.clay, fontWeight: '700' },
+  deleteAccount: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 12, paddingHorizontal: 24, marginTop: 4 },
+  deleteAccountText: { color: colors.textDim, fontWeight: '600', fontSize: 12 },
 });
