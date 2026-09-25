@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthProvider';
 import { colors, shape } from '../lib/theme';
 import { extFromAsset } from '../lib/media';
 import VideoPlayer from '../components/VideoPlayer';
+import { alert } from '../lib/alert';
 
 export default function CreateStoryScreen({ navigation }) {
   const { user } = useAuth();
@@ -22,7 +23,7 @@ export default function CreateStoryScreen({ navigation }) {
   async function pickMedia() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permiso necesario', 'Permite acceder a tus fotos y vídeos para publicar una historia.');
+      alert('Permiso necesario', 'Permite acceder a tus fotos y vídeos para publicar una historia.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -33,7 +34,7 @@ export default function CreateStoryScreen({ navigation }) {
     if (!result.canceled) {
       const selected = result.assets[0];
       if (selected.type === 'video' && selected.duration && selected.duration > 60000) {
-        Alert.alert('Vídeo demasiado largo', 'Las historias pueden durar hasta 60 segundos.');
+        alert('Vídeo demasiado largo', 'Las historias pueden durar hasta 60 segundos.');
         return;
       }
       setAsset(selected);
@@ -65,7 +66,7 @@ export default function CreateStoryScreen({ navigation }) {
       if (error) throw error;
       navigation.goBack();
     } catch (error) {
-      Alert.alert('No se pudo publicar', error.message);
+      alert('No se pudo publicar', error.message);
     } finally {
       setSaving(false);
     }
