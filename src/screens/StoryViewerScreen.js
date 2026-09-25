@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthProvider';
 import Avatar from '../components/Avatar';
 import { colors } from '../lib/theme';
 import VideoPlayer from '../components/VideoPlayer';
+import { alert } from '../lib/alert';
 
 const STORY_FIELDS = 'id, author_id, media_url, media_type, audience, caption, created_at, expires_at, profiles:author_id(id, username, display_name, avatar_url)';
 
@@ -69,7 +70,7 @@ export default function StoryViewerScreen({ route, navigation }) {
   }
 
   function confirmDelete() {
-    Alert.alert('Eliminar historia', 'La historia dejará de verse también en los destacados.', [
+    alert('Eliminar historia', 'La historia dejará de verse también en los destacados.', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Eliminar', style: 'destructive', onPress: async () => {
@@ -88,7 +89,7 @@ export default function StoryViewerScreen({ route, navigation }) {
   async function muteStories() {
     const { data: current } = await supabase.from('mutes').select('mute_posts').eq('owner_id', user.id).eq('muted_id', story.author_id).maybeSingle();
     const { error } = await supabase.from('mutes').upsert({ owner_id: user.id, muted_id: story.author_id, mute_posts: !!current?.mute_posts, mute_stories: true }, { onConflict: 'owner_id,muted_id' });
-    if (error) Alert.alert('No se pudo silenciar', error.message);
+    if (error) alert('No se pudo silenciar', error.message);
     else navigation.goBack();
   }
 
