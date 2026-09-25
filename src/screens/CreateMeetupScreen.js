@@ -7,6 +7,7 @@ import { iconFor } from '../lib/sports';
 import { geocodeLocation, getCurrentCoordinates } from '../lib/location';
 import GoogleMapCard from '../components/GoogleMapCard';
 import { colors, shape } from '../lib/theme';
+import { alert } from '../lib/alert';
 
 function todayPlus(days) {
   const d = new Date();
@@ -54,7 +55,7 @@ export default function CreateMeetupScreen({ navigation, route }) {
       setLat(String(coords.lat));
       setLng(String(coords.lng));
     } catch (_error) {
-      Alert.alert('No se pudo usar tu ubicación', 'Puedes escribir el nombre del lugar sin añadir un punto al mapa.');
+      alert('No se pudo usar tu ubicación', 'Puedes escribir el nombre del lugar sin añadir un punto al mapa.');
     } finally {
       setLocating(false);
     }
@@ -68,7 +69,7 @@ export default function CreateMeetupScreen({ navigation, route }) {
       setLat(String(coords.lat));
       setLng(String(coords.lng));
     } catch (_error) {
-      Alert.alert('No encontramos el lugar', 'Prueba a añadir la ciudad o una dirección más completa.');
+      alert('No encontramos el lugar', 'Prueba a añadir la ciudad o una dirección más completa.');
     } finally {
       setSearchingMap(false);
     }
@@ -76,16 +77,16 @@ export default function CreateMeetupScreen({ navigation, route }) {
 
   async function handleSave() {
     if (!user || !sportId || !title.trim() || !locationName.trim()) {
-      Alert.alert('Faltan datos', 'Elige deporte, título y lugar antes de crear la quedada.');
+      alert('Faltan datos', 'Elige deporte, título y lugar antes de crear la quedada.');
       return;
     }
     const scheduledAt = new Date(`${date}T${time}:00`);
     if (Number.isNaN(scheduledAt.getTime())) {
-      Alert.alert('Fecha no válida', 'Revisa la fecha y la hora.');
+      alert('Fecha no válida', 'Revisa la fecha y la hora.');
       return;
     }
     if (capacity && Number(capacity) < 1) {
-      Alert.alert('Plazas no válidas', 'La capacidad debe ser al menos de una persona.');
+      alert('Plazas no válidas', 'La capacidad debe ser al menos de una persona.');
       return;
     }
     setSaving(true);
@@ -112,7 +113,7 @@ export default function CreateMeetupScreen({ navigation, route }) {
       }
       navigation.replace('MeetupDetail', { meetupId: meetup.id });
     } catch (err) {
-      Alert.alert(editingMeetup ? 'No se pudieron guardar los cambios' : 'No se pudo crear la quedada', err.message);
+      alert(editingMeetup ? 'No se pudieron guardar los cambios' : 'No se pudo crear la quedada', err.message);
     } finally {
       setSaving(false);
     }
