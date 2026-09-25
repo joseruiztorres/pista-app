@@ -7,6 +7,8 @@ import { iconForBadge } from '../lib/badges';
 import Avatar from '../components/Avatar';
 import { colors } from '../lib/theme';
 import HighlightsRow from '../components/HighlightsRow';
+import LevelCard from '../components/LevelCard';
+import { syncGamification } from '../lib/gamification';
 
 export default function ProfileScreen({ navigation }) {
   const { profile, user, signOut } = useAuth();
@@ -14,9 +16,11 @@ export default function ProfileScreen({ navigation }) {
   const [counts, setCounts] = useState({ followers: 0, following: 0, posts: 0 });
   const [pendingRequests, setPendingRequests] = useState(0);
   const [progress, setProgress] = useState({ streak: 0, week: 0, meetups: 0 });
+  const [levelProgress, setLevelProgress] = useState(null);
 
   const load = useCallback(async () => {
     if (!user) return;
+    const gamification = await syncGamification(user.id).catch(() => null);
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - 6);
     const [{ data: badgeRows }, followersRes, followingRes, postsRes, requestsRes, streakRes, weekRes, meetupsRes] = await Promise.all([
@@ -33,6 +37,7 @@ export default function ProfileScreen({ navigation }) {
     setCounts({ followers: followersRes.count || 0, following: followingRes.count || 0, posts: postsRes.count || 0 });
     setPendingRequests(requestsRes.count || 0);
     setProgress({ streak: streakRes.data || 0, week: weekRes.count || 0, meetups: meetupsRes.count || 0 });
+    setLevelProgress(gamification?.progress || null);
   }, [user]);
 
   useEffect(() => { load(); }, [load]);
@@ -72,6 +77,8 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.stat}><Text style={styles.statValue}>{counts.following}</Text><Text style={styles.statLabel}>Siguiendo</Text></View>
         <View style={styles.stat}><Text style={styles.statValue}>{counts.posts}</Text><Text style={styles.statLabel}>Publicaciones</Text></View>
       </View>
+
+      <View style={styles.levelWrap}><LevelCard progress={levelProgress} compact onPress={() => navigation.navigate('AthleteLevel')} /></View>
 
       <Pressable style={styles.progressCard} onPress={() => navigation.navigate('Progress')}>
         <View style={styles.progressTitleRow}>
@@ -132,10 +139,11 @@ const styles = StyleSheet.create({
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   editBtnText: { color: colors.accentStrong, fontSize: 13, fontWeight: '700' },
   statsRow: { flexDirection: 'row', gap: 24, marginTop: 16 },
+  levelWrap: { width: '100%', marginTop: 18 },
   stat: { alignItems: 'center' },
   statValue: { color: colors.text, fontWeight: '800', fontSize: 16 },
   statLabel: { color: colors.textDim, fontSize: 11 },
-  progressCard: { width: '100%', marginTop: 18, backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 14, gap: 12 },
+  progressCard: { width: '100%', marginTop: 8, backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 14, gap: 12 },
   progressTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   progressTitle: { color: colors.text, fontSize: 13, fontWeight: '800' },
   progressStats: { flexDirection: 'row', justifyContent: 'space-around' },

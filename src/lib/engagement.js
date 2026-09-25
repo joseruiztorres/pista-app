@@ -33,8 +33,8 @@ export function activityMetric(metric, posts = [], checkins = [], options = {}) 
     return !since || new Date(`${row.check_date}T23:59:59`) >= since;
   });
   if (metric === 'sessions') return new Set(filteredCheckins.map((row) => row.check_date)).size;
-  if (metric === 'distance_km') return filteredPosts.reduce((sum, row) => sum + Number(row.details?.distance_km || 0), 0);
-  if (metric === 'minutes') return filteredPosts.reduce((sum, row) => sum + Number(row.details?.duration_min || row.details?.workout_duration_min || 0), 0);
+  if (metric === 'distance_km') return filteredPosts.reduce((sum, row) => sum + Number(row.details?.distance_km || row.details?.approach_distance_km || 0), 0);
+  if (metric === 'minutes') return filteredPosts.reduce((sum, row) => sum + Number(row.details?.duration_min || row.details?.workout_duration_min || row.details?.approach_duration_min || 0), 0);
   if (metric === 'sports') return new Set([...filteredPosts.map((row) => row.sport_id), ...filteredCheckins.map((row) => row.sport_id)].filter(Boolean)).size;
   return 0;
 }

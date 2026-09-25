@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthProvider';
 import { activityMetric, dateKey, startOfWeek } from '../lib/engagement';
 import { colors } from '../lib/theme';
 import SportLoader from '../components/SportLoader';
+import LevelCard from '../components/LevelCard';
+import { syncGamification } from '../lib/gamification';
 
 const DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
@@ -15,9 +17,11 @@ export default function ProgressScreen({ navigation }) {
   const [checkins, setCheckins] = useState([]);
   const [badges, setBadges] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [levelProgress, setLevelProgress] = useState(null);
 
   const load = useCallback(async () => {
     if (!user) return;
+    const gamification = await syncGamification(user.id).catch(() => null);
     const since = new Date();
     since.setDate(since.getDate() - 90);
     const [postsRes, checkinsRes, badgeRes] = await Promise.all([
@@ -28,6 +32,7 @@ export default function ProgressScreen({ navigation }) {
     setPosts(postsRes.data || []);
     setCheckins(checkinsRes.data || []);
     setBadges(badgeRes.count || 0);
+    setLevelProgress(gamification?.progress || null);
     setLoading(false);
   }, [user]);
 
@@ -63,6 +68,8 @@ export default function ProgressScreen({ navigation }) {
         <Text style={styles.title}>Tu deporte, en números</Text>
         <Text style={styles.subtitle}>{difference === 0 ? 'Mantienes el ritmo de la semana anterior.' : difference > 0 ? `Llevas ${difference} entrenamientos más que la semana anterior.` : `Te faltan ${Math.abs(difference)} entrenamientos para igualar la semana anterior.`}</Text>
       </View>
+
+      <LevelCard progress={levelProgress} onPress={() => navigation.navigate('AthleteLevel')} />
 
       <View style={styles.metricGrid}>
         <Metric icon="calendar-outline" value={stats.weeklySessions} label="esta semana" />

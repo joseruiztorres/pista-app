@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
 import { colors } from '../lib/theme';
 import GoogleMapCard from '../components/GoogleMapCard';
+import { checkActivityBadges } from '../lib/awardBadges';
 
 function formatWhen(iso) {
   const d = new Date(iso);
@@ -48,6 +49,7 @@ export default function MeetupDetailScreen({ route, navigation }) {
     } else {
       await supabase.from('meetup_attendees').insert({ meetup_id: meetupId, profile_id: user.id });
     }
+    await checkActivityBadges(user.id);
     await load();
     setBusy(false);
   }
