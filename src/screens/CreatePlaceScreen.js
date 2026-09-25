@@ -7,6 +7,7 @@ import { iconFor } from '../lib/sports';
 import { geocodeLocation, getCurrentCoordinates } from '../lib/location';
 import GoogleMapCard from '../components/GoogleMapCard';
 import { colors, shape } from '../lib/theme';
+import { alert } from '../lib/alert';
 
 export default function CreatePlaceScreen({ navigation, route }) {
   const { user, sportIds } = useAuth();
@@ -37,7 +38,7 @@ export default function CreatePlaceScreen({ navigation, route }) {
       setLat(String(coords.lat));
       setLng(String(coords.lng));
     } catch (_error) {
-      Alert.alert('No se pudo usar tu ubicación', 'Puedes escribir la dirección del sitio manualmente.');
+      alert('No se pudo usar tu ubicación', 'Puedes escribir la dirección del sitio manualmente.');
     } finally {
       setLocating(false);
     }
@@ -51,7 +52,7 @@ export default function CreatePlaceScreen({ navigation, route }) {
       setLat(String(coords.lat));
       setLng(String(coords.lng));
     } catch (_error) {
-      Alert.alert('No encontramos la dirección', 'Prueba a añadir la ciudad o una dirección más completa.');
+      alert('No encontramos la dirección', 'Prueba a añadir la ciudad o una dirección más completa.');
     } finally {
       setSearchingMap(false);
     }
@@ -59,7 +60,7 @@ export default function CreatePlaceScreen({ navigation, route }) {
 
   async function handleSave() {
     if (!user || !name.trim()) {
-      Alert.alert('Falta el nombre', 'Escribe el nombre del sitio.');
+      alert('Falta el nombre', 'Escribe el nombre del sitio.');
       return;
     }
     setSaving(true);
@@ -84,7 +85,7 @@ export default function CreatePlaceScreen({ navigation, route }) {
         navigation.replace('PlaceDetail', { placeId: place.id });
       }
     } catch (err) {
-      Alert.alert('No se pudo crear el sitio', err.message);
+      alert('No se pudo crear el sitio', err.message);
     } finally {
       setSaving(false);
     }
