@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { getOrCreateConversation } from '../lib/chat';
 import { useAuth } from '../context/AuthProvider';
 import { colors, shape } from '../lib/theme';
+import { alert } from '../lib/alert';
 
 export default function MessageButton({ profileId, profileName }) {
   const { user } = useAuth();
@@ -18,7 +19,7 @@ export default function MessageButton({ profileId, profileName }) {
       const conversationId = await getOrCreateConversation(user.id, profileId);
       navigation.navigate('Conversation', { conversationId, otherName: profileName });
     } catch (err) {
-      Alert.alert('No se pudo abrir el chat', err.message);
+      alert('No se pudo abrir el chat', err.message);
     } finally {
       setBusy(false);
     }
