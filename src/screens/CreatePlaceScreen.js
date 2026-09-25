@@ -4,8 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
-import { geocodeLocation, getCurrentCoordinates } from '../lib/location';
-import GoogleMapCard from '../components/GoogleMapCard';
 import { colors } from '../lib/theme';
 
 export default function CreatePlaceScreen({ navigation, route }) {
@@ -18,7 +16,6 @@ export default function CreatePlaceScreen({ navigation, route }) {
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
   const [locating, setLocating] = useState(false);
-  const [searchingMap, setSearchingMap] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -30,31 +27,24 @@ export default function CreatePlaceScreen({ navigation, route }) {
     });
   }, [sportIds]);
 
-  async function useMyLocation() {
+  function useMyLocation() {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      Alert.alert('No disponible', 'Este dispositivo no permite compartir ubicación desde aquí.');
+      return;
+    }
     setLocating(true);
-    try {
-      const coords = await getCurrentCoordinates();
-      setLat(String(coords.lat));
-      setLng(String(coords.lng));
-    } catch (_error) {
-      Alert.alert('No se pudo usar tu ubicación', 'Puedes escribir la dirección del sitio manualmente.');
-    } finally {
-      setLocating(false);
-    }
-  }
-
-  async function findOnMap() {
-    if (!address.trim() || searchingMap) return;
-    setSearchingMap(true);
-    try {
-      const coords = await geocodeLocation(address);
-      setLat(String(coords.lat));
-      setLng(String(coords.lng));
-    } catch (_error) {
-      Alert.alert('No encontramos la dirección', 'Prueba a añadir la ciudad o una dirección más completa.');
-    } finally {
-      setSearchingMap(false);
-    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(String(pos.coords.latitude.toFixed(5)));
+        setLng(String(pos.coords.longitude.toFixed(5)));
+        setLocating(false);
+      },
+      () => {
+        setLocating(false);
+        Alert.alert('No se pudo obtener la ubicación', 'Comprueba los permisos de ubicación del navegador.');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   }
 
   async function handleSave() {
@@ -110,15 +100,7 @@ export default function CreatePlaceScreen({ navigation, route }) {
 
       <Field label="Dirección (opcional)">
         <TextInput style={styles.input} placeholder="Calle, ciudad…" placeholderTextColor={colors.textDim}
-          value={address} onChangeText={(value) => { setAddress(value); setLat(''); setLng(''); }}
-          onSubmitEditing={findOnMap} />
-
-        {!!address.trim() && !lat && !lng && (
-          <Pressable style={styles.previewBtn} onPress={findOnMap} disabled={searchingMap}>
-            <Ionicons name="map-outline" size={17} color={colors.accentStrong} />
-            <Text style={styles.previewBtnText}>{searchingMap ? 'Buscando dirección…' : 'Ver esta dirección en el mapa'}</Text>
-          </Pressable>
-        )}
+          value={address} onChangeText={setAddress} />
 
         {lat && lng ? (
           <View style={styles.locatedRow}>
@@ -134,20 +116,7 @@ export default function CreatePlaceScreen({ navigation, route }) {
             <Text style={styles.secondaryBtnText}>{locating ? 'Localizando…' : 'Usar mi ubicación actual (si estás ahí ahora)'}</Text>
           </Pressable>
         )}
-        <Text style={styles.hint}>Escribe una dirección y comprueba el punto en el mapa, o usa tu ubicación si ya estás allí.</Text>
-
-        {lat && lng ? (
-          <GoogleMapCard
-            query={address}
-            latitude={lat}
-            longitude={lng}
-            label={address.trim() || name.trim() || 'este sitio'}
-            onLocationChange={(coords) => {
-              setLat(String(coords.lat));
-              setLng(String(coords.lng));
-            }}
-          />
-        ) : null}
+        <Text style={styles.hint}>Esto añade el sitio al mapa. No hace falta si solo quieres escribir la dirección.</Text>
       </Field>
 
       <Pressable style={styles.btnPrimary} onPress={handleSave} disabled={saving}>
@@ -187,8 +156,6 @@ const styles = StyleSheet.create({
   chipText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },
   secondaryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 4 },
   secondaryBtnText: { color: colors.accentStrong, fontSize: 13, fontWeight: '600' },
-  previewBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, alignSelf: 'flex-start', paddingVertical: 2 },
-  previewBtnText: { color: colors.accentStrong, fontSize: 13, fontWeight: '700' },
   locatedRow: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, alignSelf: 'flex-start' },
   locatedText: { color: colors.text, fontSize: 12, fontWeight: '600', flex: 1 },
   locatedRemove: { color: colors.clay, fontSize: 12, fontWeight: '700' },
