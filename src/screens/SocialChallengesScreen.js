@@ -9,6 +9,7 @@ import { formatMetric, progressPercent } from '../lib/engagement';
 import { queueCelebrations } from '../lib/celebrations';
 import Avatar from '../components/Avatar';
 import SportLoader from '../components/SportLoader';
+import { alert } from '../lib/alert';
 
 export default function SocialChallengesScreen({ navigation }) {
   const { user } = useAuth();
@@ -51,7 +52,7 @@ export default function SocialChallengesScreen({ navigation }) {
 
   async function respond(challengeId, accept) {
     const { error } = await supabase.rpc('respond_social_challenge', { p_challenge_id: challengeId, p_accept: accept });
-    if (error) Alert.alert('No se pudo responder', error.message); else load();
+    if (error) alert('No se pudo responder', error.message); else load();
   }
 
   if (loading) return <View style={styles.center}><SportLoader label="Preparando la liga" /></View>;
