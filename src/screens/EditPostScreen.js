@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert } from 
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { colors, shape } from '../lib/theme';
+import { alert } from '../lib/alert';
 
 // Edición ligera: la descripción (todo tipo de post), la nota (reseñas) y los
 // datos de ruta (distancia/duración/desnivel). No permite cambiar el deporte,
@@ -36,7 +37,7 @@ export default function EditPostScreen({ route, navigation }) {
       if (error) throw error;
       navigation.goBack();
     } catch (err) {
-      Alert.alert('No se pudo guardar', err.message);
+      alert('No se pudo guardar', err.message);
     } finally {
       setSaving(false);
     }
