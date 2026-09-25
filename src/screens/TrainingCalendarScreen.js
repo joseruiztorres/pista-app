@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthProvider';
 import { colors, shape } from '../lib/theme';
 import { iconFor } from '../lib/sports';
 import { checkActivityBadges } from '../lib/awardBadges';
+import { alert } from '../lib/alert';
 
 const WHEN = [{ label: 'Hoy', days: 0 }, { label: 'Mañana', days: 1 }, { label: 'En 3 días', days: 3 }, { label: 'Próxima semana', days: 7 }];
 const DURATIONS = [30, 45, 60, 90];
@@ -53,7 +54,7 @@ export default function TrainingCalendarScreen() {
       duration_min: duration,
     });
     setSaving(false);
-    if (error) Alert.alert('No se pudo planificar', error.message);
+    if (error) alert('No se pudo planificar', error.message);
     else { setTitle(''); load(); }
   }
 
