@@ -95,5 +95,5 @@ export async function checkActivityBadges(profileId) {
       { onConflict: 'profile_id,badge_id', ignoreDuplicates: true },
     );
   }
-  await syncGamification(profileId);
+  return syncGamification(profileId);
 }

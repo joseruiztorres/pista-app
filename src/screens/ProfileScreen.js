@@ -8,7 +8,7 @@ import Avatar from '../components/Avatar';
 import { colors } from '../lib/theme';
 import HighlightsRow from '../components/HighlightsRow';
 import LevelCard from '../components/LevelCard';
-import { syncGamification } from '../lib/gamification';
+import { checkActivityBadges } from '../lib/awardBadges';
 
 export default function ProfileScreen({ navigation }) {
   const { profile, user, signOut } = useAuth();
@@ -20,7 +20,7 @@ export default function ProfileScreen({ navigation }) {
 
   const load = useCallback(async () => {
     if (!user) return;
-    const gamification = await syncGamification(user.id).catch(() => null);
+    const gamification = await checkActivityBadges(user.id).catch(() => null);
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - 6);
     const [{ data: badgeRows }, followersRes, followingRes, postsRes, requestsRes, streakRes, weekRes, meetupsRes] = await Promise.all([

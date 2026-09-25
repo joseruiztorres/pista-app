@@ -7,7 +7,7 @@ import { activityMetric, dateKey, startOfWeek } from '../lib/engagement';
 import { colors } from '../lib/theme';
 import SportLoader from '../components/SportLoader';
 import LevelCard from '../components/LevelCard';
-import { syncGamification } from '../lib/gamification';
+import { checkActivityBadges } from '../lib/awardBadges';
 
 const DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
@@ -21,7 +21,7 @@ export default function ProgressScreen({ navigation }) {
 
   const load = useCallback(async () => {
     if (!user) return;
-    const gamification = await syncGamification(user.id).catch(() => null);
+    const gamification = await checkActivityBadges(user.id).catch(() => null);
     const since = new Date();
     since.setDate(since.getDate() - 90);
     const [postsRes, checkinsRes, badgeRes] = await Promise.all([

@@ -8,7 +8,6 @@ import { colors } from '../lib/theme';
 import { iconForBadge } from '../lib/badges';
 import { activityMetric, dateKey, formatMetric, metricLabel, progressPercent, startOfWeek } from '../lib/engagement';
 import { awardBadge, checkActivityBadges } from '../lib/awardBadges';
-import { syncGamification } from '../lib/gamification';
 import LevelCard from '../components/LevelCard';
 
 const GOAL_PRESETS = { sessions: [2, 3, 5, 7], distance_km: [5, 10, 20, 50], minutes: [60, 120, 180, 300] };
@@ -33,7 +32,7 @@ export default function RetosScreen() {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const gamification = await syncGamification(user.id).catch(() => null);
+    const gamification = await checkActivityBadges(user.id).catch(() => null);
     const historyStart = new Date();
     historyStart.setDate(historyStart.getDate() - 90);
     const [badgesRes, earnedRes, streakRes, challengesRes, membersRes, goalsRes, postsRes, checkinsRes] = await Promise.all([
