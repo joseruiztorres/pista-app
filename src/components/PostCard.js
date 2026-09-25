@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import RoutePreview from './RoutePreview';
 import VideoPlayer from './VideoPlayer';
+import { alert } from '../lib/alert';
 
 const TYPE_LABEL = { ruta: 'Ruta', progreso: 'Progreso', comida: 'Comida', tip: 'Tip', resena: 'Reseña' };
 const REPORT_REASONS = [
@@ -37,7 +38,7 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
     const { error } = await supabase.from('posts').delete().eq('id', post.id).eq('author_id', user.id);
     setBusy(false);
     closeMenu();
-    if (error) { Alert.alert('No se pudo eliminar', error.message); return; }
+    if (error) { alert('No se pudo eliminar', error.message); return; }
     onChanged?.();
   }
 
@@ -46,7 +47,7 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
     const { error } = await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: post.author_id });
     setBusy(false);
     closeMenu();
-    if (error) { Alert.alert('No se pudo bloquear', error.message); return; }
+    if (error) { alert('No se pudo bloquear', error.message); return; }
     onChanged?.();
   }
 
@@ -57,8 +58,8 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
     });
     setBusy(false);
     closeMenu();
-    if (error) { Alert.alert('No se pudo enviar el reporte', error.message); return; }
-    Alert.alert('Gracias', 'Hemos recibido tu reporte.');
+    if (error) { alert('No se pudo enviar el reporte', error.message); return; }
+    alert('Gracias', 'Hemos recibido tu reporte.');
   }
 
   async function handleMutePosts() {
@@ -66,7 +67,7 @@ export default function PostCard({ post, liked, onToggleLike, onPressAuthor, onP
     const { data: current } = await supabase.from('mutes').select('mute_stories').eq('owner_id', user.id).eq('muted_id', post.author_id).maybeSingle();
     const { error } = await supabase.from('mutes').upsert({ owner_id: user.id, muted_id: post.author_id, mute_posts: true, mute_stories: !!current?.mute_stories }, { onConflict: 'owner_id,muted_id' });
     setBusy(false); closeMenu();
-    if (error) { Alert.alert('No se pudo silenciar', error.message); return; }
+    if (error) { alert('No se pudo silenciar', error.message); return; }
     onChanged?.();
   }
 
