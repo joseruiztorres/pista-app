@@ -9,6 +9,7 @@ import { colors, shape } from '../lib/theme';
 import HighlightsRow from '../components/HighlightsRow';
 import LevelCard from '../components/LevelCard';
 import { checkActivityBadges } from '../lib/awardBadges';
+import { alert } from '../lib/alert';
 
 export default function ProfileScreen({ navigation }) {
   const { profile, user, signOut } = useAuth();
@@ -50,7 +51,7 @@ export default function ProfileScreen({ navigation }) {
   useEffect(() => { load(); }, [load]);
 
   const handleDeactivateAccount = useCallback(() => {
-    Alert.alert(
+    alert(
       'Desactivar cuenta',
       'Tu perfil y tus publicaciones dejarán de verse mientras esté desactivada. Nada se borra: vuelve a entrar con tu email y contraseña cuando quieras y se reactivará todo tal cual estaba.',
       [
@@ -61,7 +62,7 @@ export default function ProfileScreen({ navigation }) {
           onPress: async () => {
             const { error } = await supabase.rpc('deactivate_own_account');
             if (error) {
-              Alert.alert('No se pudo desactivar la cuenta', error.message);
+              alert('No se pudo desactivar la cuenta', error.message);
               return;
             }
             await signOut().catch(() => {});
@@ -72,7 +73,7 @@ export default function ProfileScreen({ navigation }) {
   }, [signOut]);
 
   const handleDeleteAccount = useCallback(() => {
-    Alert.alert(
+    alert(
       'Eliminar cuenta',
       'Se borrarán tu perfil, publicaciones, rutas, mensajes y toda tu actividad de forma permanente. Esta acción no se puede deshacer.',
       [
@@ -83,7 +84,7 @@ export default function ProfileScreen({ navigation }) {
           onPress: async () => {
             const { error } = await supabase.rpc('delete_own_account');
             if (error) {
-              Alert.alert('No se pudo eliminar la cuenta', error.message);
+              alert('No se pudo eliminar la cuenta', error.message);
               return;
             }
             await signOut().catch(() => {});
