@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import SportLoader from '../components/SportLoader';
 import { iconFor } from '../lib/sports';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 import GoogleMapCard from '../components/GoogleMapCard';
 
 const REVIEW_SELECT = '*, profiles:author_id(username, display_name)';
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   starsRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   avgText: { color: colors.textDim, fontSize: 12, marginLeft: 4 },
   noReviews: { color: colors.textDim, fontSize: 12, marginTop: 4 },
-  reviewBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 12 },
+  reviewBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.accent, ...shape.button, paddingVertical: 12 },
   reviewBtnText: { color: colors.bg, fontSize: 14, fontWeight: '700' },
   sectionTitle: { color: colors.textDim, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   reviewCard: { backgroundColor: colors.surface, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: colors.line, gap: 6 },

@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 import VideoPlayer from '../components/VideoPlayer';
 
 export default function CreateStoryScreen({ navigation }) {
@@ -123,13 +123,13 @@ const styles = StyleSheet.create({
   placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, padding: 24 },
   placeholderTitle: { color: colors.text, fontSize: 17, fontWeight: '800' },
   placeholderText: { color: colors.textDim, fontSize: 12, textAlign: 'center' },
-  changeBadge: { position: 'absolute', right: 12, bottom: 12, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(15,23,18,0.86)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
+  changeBadge: { position: 'absolute', right: 12, bottom: 12, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(11,14,26,0.86)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
   changeText: { color: colors.text, fontSize: 12, fontWeight: '700' },
   caption: { backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.line, color: colors.text, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14 },
   audienceRow: { flexDirection: 'row', gap: 7, flexWrap: 'wrap' },
   audience: { backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
   audienceActive: { backgroundColor: colors.accent }, audienceText: { color: colors.textDim, fontSize: 11, fontWeight: '800' }, audienceTextActive: { color: colors.bg },
-  publish: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, marginBottom: 8 },
+  publish: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.accent, ...shape.button, paddingVertical: 14, marginBottom: 8 },
   disabled: { opacity: 0.4 },
   publishText: { color: colors.bg, fontSize: 15, fontWeight: '800' },
 });

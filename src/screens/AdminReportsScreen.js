@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 import SportLoader from '../components/SportLoader';
 
 const REASON_LABEL = { spam: 'Spam o publicidad', inapropiado: 'Contenido inapropiado', acoso: 'Acoso o discurso de odio', otro: 'Otro motivo' };
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   when: { color: colors.textDim, fontSize: 11 },
   preview: { color: colors.textDim, fontSize: 12, lineHeight: 17 },
   actions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.surface2, ...shape.button, paddingHorizontal: 10, paddingVertical: 6 },
   actionBtnDanger: { backgroundColor: colors.clay },
   actionText: { color: colors.text, fontSize: 11, fontWeight: '700' },
 });

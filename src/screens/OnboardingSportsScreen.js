@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import SportLoader from '../components/SportLoader';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 
 export default function OnboardingSportsScreen() {
   const { user, refreshProfile } = useAuth();
@@ -92,6 +92,6 @@ const styles = StyleSheet.create({
   ring: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' },
   ringActive: { backgroundColor: colors.accent },
   optionLabel: { color: colors.text, fontSize: 11, fontWeight: '600' },
-  btnPrimary: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
-  btnPrimaryText: { color: '#06110B', fontSize: 16, fontWeight: '700' },
+  btnPrimary: { backgroundColor: colors.accent, ...shape.button, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
+  btnPrimaryText: { color: colors.bg, fontSize: 16, fontWeight: '700' },
 });

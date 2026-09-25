@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 import GoogleMapCard from '../components/GoogleMapCard';
 import { checkActivityBadges } from '../lib/awardBadges';
 
@@ -160,14 +160,14 @@ const styles = StyleSheet.create({
   locationCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: colors.line },
   locationText: { color: colors.text, fontSize: 13, flex: 1 },
   organizer: { color: colors.textDim, fontSize: 12 },
-  btnPrimary: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center' },
+  btnPrimary: { backgroundColor: colors.accent, ...shape.button, paddingVertical: 14, alignItems: 'center' },
   btnPrimaryText: { color: colors.bg, fontSize: 15, fontWeight: '700' },
   btnJoined: { backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line },
   btnJoinedText: { color: colors.text },
   btnDisabled: { opacity: 0.45 },
-  btnSecondary: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: colors.accent, borderRadius: 999, paddingVertical: 13 },
+  btnSecondary: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: colors.accent, ...shape.button, paddingVertical: 13 },
   btnSecondaryText: { color: colors.accentStrong, fontSize: 14, fontWeight: '800' },
-  btnDanger: { borderWidth: 1, borderColor: colors.clay, borderRadius: 999, paddingVertical: 14, alignItems: 'center' },
+  btnDanger: { borderWidth: 1, borderColor: colors.clay, ...shape.button, paddingVertical: 14, alignItems: 'center' },
   btnDangerText: { color: colors.clay, fontSize: 15, fontWeight: '700' },
   label: { color: colors.textDim, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 4 },
   empty: { color: colors.textDim, fontSize: 13 },

@@ -3,7 +3,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 import { iconFor } from '../lib/sports';
 import RoutePreview from '../components/RoutePreview';
 import SportLoader from '../components/SportLoader';
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   eyebrow: { color: colors.accentStrong, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   title: { color: colors.text, fontSize: 24, fontWeight: '900' },
   hint: { color: colors.textDim, fontSize: 12, lineHeight: 17 },
-  record: { marginTop: 8, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 10 },
+  record: { marginTop: 8, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: colors.accent, ...shape.button, paddingHorizontal: 14, paddingVertical: 10 },
   recordText: { color: colors.bg, fontSize: 12, fontWeight: '900' },
   card: { backgroundColor: colors.surface, borderRadius: 18, borderWidth: 1, borderColor: colors.line, padding: 12, gap: 9 },
   cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

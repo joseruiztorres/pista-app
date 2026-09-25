@@ -9,7 +9,7 @@ import { iconFor } from '../lib/sports';
 import { checkActivityBadges, checkFirstPostBadge } from '../lib/awardBadges';
 import RouteRecorder from '../components/RouteRecorder';
 import VideoPlayer from '../components/VideoPlayer';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 
 const TYPES = [
   { id: 'ruta', label: 'Ruta' },
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   compactRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   compactInput: { flexGrow: 1, minWidth: 76, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, color: colors.text, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 10, fontSize: 13 },
   hint: { color: colors.textDim, fontSize: 11 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, ...shape.tag, paddingHorizontal: 14, paddingVertical: 8 },
   chipActive: { backgroundColor: colors.accent },
   chipText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },
   secondaryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 4 },
@@ -392,6 +392,6 @@ const styles = StyleSheet.create({
   thumbWrap: { width: 84, height: 84, borderRadius: 12, overflow: 'hidden', backgroundColor: colors.surface2 },
   thumb: { width: '100%', height: '100%' },
   thumbRemove: { position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
-  btnPrimary: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 8, marginBottom: 32 },
+  btnPrimary: { backgroundColor: colors.accent, ...shape.button, paddingVertical: 14, alignItems: 'center', marginTop: 8, marginBottom: 32 },
   btnPrimaryText: { color: colors.bg, fontSize: 16, fontWeight: '700' },
 });

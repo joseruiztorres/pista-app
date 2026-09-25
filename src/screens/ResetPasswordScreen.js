@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 
 // Se muestra cuando el usuario llega desde el enlace de "olvidé mi contraseña"
 // del correo (Supabase abre una sesión de recuperación y AuthProvider lo detecta).
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, color: colors.text,
     borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16,
   },
-  btnPrimary: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
-  btnPrimaryText: { color: '#06110B', fontSize: 16, fontWeight: '700' },
+  btnPrimary: { backgroundColor: colors.accent, ...shape.button, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
+  btnPrimaryText: { color: colors.bg, fontSize: 16, fontWeight: '700' },
   message: { color: colors.text, textAlign: 'center', fontSize: 13, lineHeight: 19 },
 });

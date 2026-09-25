@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
 import { geocodeLocation, getCurrentCoordinates } from '../lib/location';
 import GoogleMapCard from '../components/GoogleMapCard';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 
 function todayPlus(days) {
   const d = new Date();
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14,
   },
   textarea: { minHeight: 80, textAlignVertical: 'top' },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, ...shape.tag, paddingHorizontal: 14, paddingVertical: 8 },
   chipActive: { backgroundColor: colors.accent },
   chipText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },
   secondaryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 4 },
@@ -251,6 +251,6 @@ const styles = StyleSheet.create({
   locatedText: { color: colors.text, fontSize: 12, fontWeight: '600', flex: 1 },
   locatedRemove: { color: colors.clay, fontSize: 12, fontWeight: '700' },
   hint: { color: colors.textDim, fontSize: 11, marginTop: 4 },
-  btnPrimary: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 8, marginBottom: 32 },
+  btnPrimary: { backgroundColor: colors.accent, ...shape.button, paddingVertical: 14, alignItems: 'center', marginTop: 8, marginBottom: 32 },
   btnPrimaryText: { color: colors.bg, fontSize: 16, fontWeight: '700' },
 });

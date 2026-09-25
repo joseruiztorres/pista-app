@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthProvider';
 import { activityMetric, dateKey, startOfWeek } from '../lib/engagement';
 import { iconFor } from '../lib/sports';
 import { levelFromXp } from '../lib/gamification';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 import SportLoader from '../components/SportLoader';
 
 export default function WeeklyRecapScreen({ navigation }) {
@@ -113,5 +113,5 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 }, metric: { width: '48%', minHeight: 105, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 17, padding: 14, justifyContent: 'space-between' }, metricValue: { color: colors.text, fontSize: 21, fontWeight: '900' }, metricLabel: { color: colors.textDim, fontSize: 10 },
   card: { flexDirection: 'row', alignItems: 'center', gap: 13, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 18, padding: 15 }, sportIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' }, cardLabel: { color: colors.accentStrong, fontSize: 8, fontWeight: '900', letterSpacing: 0.8 }, cardTitle: { color: colors.text, fontSize: 15, fontWeight: '900', marginTop: 2 }, cardText: { color: colors.textDim, fontSize: 10, marginTop: 3 },
   cardColumn: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 18, padding: 15, gap: 10 }, badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 9, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 10 }, badgeName: { color: colors.text, fontSize: 12, fontWeight: '700' },
-  share: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14 }, shareText: { color: colors.bg, fontSize: 14, fontWeight: '900' }, secondary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 10 }, secondaryText: { color: colors.accentStrong, fontSize: 12, fontWeight: '800' },
+  share: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.accent, ...shape.button, paddingVertical: 14 }, shareText: { color: colors.bg, fontSize: 14, fontWeight: '900' }, secondary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 10 }, secondaryText: { color: colors.accentStrong, fontSize: 12, fontWeight: '800' },
 });

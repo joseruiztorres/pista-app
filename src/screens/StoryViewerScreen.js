@@ -175,7 +175,7 @@ function formatAge(value) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#050805' },
+  screen: { flex: 1, backgroundColor: '#05060D' },
   center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
   empty: { color: colors.textDim, textAlign: 'center' },
   backButton: { backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 22, paddingVertical: 11 },

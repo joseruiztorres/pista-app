@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 
 // Edición ligera: la descripción (todo tipo de post), la nota (reseñas) y los
 // datos de ruta (distancia/duración/desnivel). No permite cambiar el deporte,
@@ -101,6 +101,6 @@ const styles = StyleSheet.create({
     borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14,
   },
   textarea: { minHeight: 80, textAlignVertical: 'top' },
-  btnPrimary: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 8, marginBottom: 32 },
+  btnPrimary: { backgroundColor: colors.accent, ...shape.button, paddingVertical: 14, alignItems: 'center', marginTop: 8, marginBottom: 32 },
   btnPrimaryText: { color: colors.bg, fontSize: 16, fontWeight: '700' },
 });

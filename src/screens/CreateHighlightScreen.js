@@ -3,7 +3,7 @@ import { View, Text, TextInput, Pressable, Image, ScrollView, StyleSheet, Alert,
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 
 export default function CreateHighlightScreen({ route, navigation }) {
   const { user } = useAuth();
@@ -147,8 +147,8 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', gap: 8, paddingVertical: 48, paddingHorizontal: 24 },
   emptyTitle: { color: colors.text, fontWeight: '800' },
   emptyText: { color: colors.textDim, fontSize: 12, textAlign: 'center' },
-  secondary: { borderWidth: 1, borderColor: colors.accent, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10, marginTop: 6 },
+  secondary: { borderWidth: 1, borderColor: colors.accent, ...shape.button, paddingHorizontal: 18, paddingVertical: 10, marginTop: 6 },
   secondaryText: { color: colors.accentStrong, fontWeight: '800', fontSize: 13 },
-  save: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
+  save: { backgroundColor: colors.accent, ...shape.button, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
   saveText: { color: colors.bg, fontWeight: '800', fontSize: 15 },
 });

@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
 import { haversineKm } from '../lib/geo';
 import RouteRecorder from '../components/RouteRecorder';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 import { checkActivityBadges } from '../lib/awardBadges';
 
 const ACTIVITY_SPORTS = ['running', 'ciclismo', 'caminar', 'senderismo', 'trail', 'patinaje', 'escalada'];
@@ -201,6 +201,6 @@ const styles = StyleSheet.create({
   metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, metric: { width: '48%', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: 12 }, metricValue: { color: colors.text, fontSize: 17, fontWeight: '900' }, metricLabel: { color: colors.textDim, fontSize: 10, marginTop: 3 },
   input: { minHeight: 76, color: colors.text, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: 12, textAlignVertical: 'top' }, sectionLabel: { color: colors.textDim, fontSize: 11, fontWeight: '800', textTransform: 'uppercase' }, row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, choice: { backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 }, choiceActive: { backgroundColor: colors.accent }, choiceText: { color: colors.textDim, fontSize: 11, fontWeight: '700' }, choiceTextActive: { color: colors.bg },
   privacyRow: { flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: 12 }, privacyTitle: { color: colors.text, fontSize: 13, fontWeight: '800' },
-  publish: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center' }, publishText: { color: colors.bg, fontSize: 15, fontWeight: '900' },
+  publish: { backgroundColor: colors.accent, ...shape.button, paddingVertical: 14, alignItems: 'center' }, publishText: { color: colors.bg, fontSize: 15, fontWeight: '900' },
   climbForm: { gap: 12 }, climbIntro: { flexDirection: 'row', alignItems: 'center', gap: 10 }, climbTitle: { color: colors.text, fontSize: 15, fontWeight: '900' }, climbGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, smallField: { width: '48%', gap: 5 }, fieldLabel: { color: colors.textDim, fontSize: 10, fontWeight: '700' }, smallInput: { color: colors.text, backgroundColor: colors.surface2, borderRadius: 12, paddingHorizontal: 11, paddingVertical: 10, fontSize: 12 },
 });

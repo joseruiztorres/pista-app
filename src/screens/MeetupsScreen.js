@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 import MeetupsMap from '../components/MeetupsMap';
 
 const MEETUP_SELECT = '*, profiles:organizer_id(username, display_name), meetup_attendees(count)';
@@ -151,15 +151,15 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 56, paddingHorizontal: 16 },
   h1: { color: colors.text, fontSize: 20, fontWeight: '800' },
-  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
+  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.accent, ...shape.button, paddingHorizontal: 12, paddingVertical: 8 },
   newBtnText: { color: colors.bg, fontWeight: '700', fontSize: 13 },
   filterRow: { paddingHorizontal: 16, paddingVertical: 14, gap: 8 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, marginRight: 8 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, ...shape.tag, paddingHorizontal: 14, paddingVertical: 8, marginRight: 8 },
   chipActive: { backgroundColor: colors.accent },
   chipText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },
   periodRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 4 },
   periodChip: { borderWidth: 1, borderColor: colors.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
-  periodChipActive: { borderColor: colors.accent, backgroundColor: 'rgba(76,168,115,0.12)' },
+  periodChipActive: { borderColor: colors.accent, backgroundColor: 'rgba(255,210,63,0.12)' },
   periodText: { color: colors.textDim, fontSize: 11, fontWeight: '700' },
   periodTextActive: { color: colors.accentStrong },
   viewToggle: { alignSelf: 'flex-end', flexDirection: 'row', marginHorizontal: 16, marginTop: 7, backgroundColor: colors.surface2, borderRadius: 999, padding: 3 },

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
+import Svg, { Circle } from 'react-native-svg';
+import { PistaMark } from '../components/PistaLogo';
 // (Platform ya se importa arriba; se usa en handleReset para el redirectTo en web)
 
 export default function LoginScreen() {
@@ -60,9 +62,18 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={styles.lanes} pointerEvents="none">
+        <Svg width={340} height={340} viewBox="0 0 340 340">
+          {[120, 160, 200, 240].map((r) => (
+            <Circle key={r} cx={340} cy={0} r={r} fill="none" stroke={colors.accent} strokeWidth={12} strokeOpacity={0.07} />
+          ))}
+          <Circle cx={340 - 180 * Math.SQRT1_2} cy={180 * Math.SQRT1_2} r={6} fill={colors.clay} />
+        </Svg>
+      </View>
       <View style={styles.brand}>
-        <Text style={styles.wordmark}>PISTA</Text>
-        <Text style={styles.tagline}>Entrena. Comparte. Compite.</Text>
+        <PistaMark size={60} framed />
+        <Text style={styles.wordmark}>pista</Text>
+        <Text style={styles.tagline}>Tu deporte, tu gente, tu pista.</Text>
       </View>
 
       <View style={styles.form}>
@@ -119,10 +130,11 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg, justifyContent: 'center', padding: 24, gap: 40 },
+  screen: { flex: 1, backgroundColor: colors.bg, justifyContent: 'center', padding: 24, gap: 40, overflow: 'hidden' },
   brand: { gap: 6 },
-  wordmark: { color: colors.accent, fontSize: 40, fontWeight: '800', letterSpacing: 1 },
-  tagline: { color: colors.textDim, fontSize: 15 },
+  wordmark: { color: colors.text, fontSize: 48, fontWeight: '900', letterSpacing: -1.5, marginTop: 14 },
+  lanes: { position: 'absolute', top: 0, right: 0 },
+  tagline: { color: colors.textDim, fontSize: 16, fontWeight: '600' },
   form: { gap: 14 },
   field: { gap: 6 },
   label: { color: colors.textDim, fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
@@ -130,8 +142,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, color: colors.text,
     borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16,
   },
-  btnPrimary: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
-  btnPrimaryText: { color: '#06110B', fontSize: 16, fontWeight: '700' },
+  btnPrimary: { backgroundColor: colors.accent, ...shape.button, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
+  btnPrimaryText: { color: colors.bg, fontSize: 16, fontWeight: '700' },
   forgot: { color: colors.accentStrong, fontSize: 12, fontWeight: '600', textAlign: 'right', marginTop: -6 },
   switch: { color: colors.textDim, textAlign: 'center', marginTop: 4, fontSize: 13 },
   message: { color: colors.text, textAlign: 'center', fontSize: 13, lineHeight: 19 },

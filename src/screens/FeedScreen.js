@@ -8,8 +8,8 @@ import PostCard from '../components/PostCard';
 import DailyChallengeCard from '../components/DailyChallengeCard';
 import SportLoader from '../components/SportLoader';
 import StoriesBar from '../components/StoriesBar';
-import { colors } from '../lib/theme';
-import MotivationCard from '../components/MotivationCard';
+import { colors, shape } from '../lib/theme';
+import PistaLogo from '../components/PistaLogo';
 
 const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position, media_type), comments(count), place:place_id(name)';
 const PAGE_SIZE = 15;
@@ -130,7 +130,7 @@ export default function FeedScreen({ navigation }) {
   return (
     <View style={styles.screen}>
       <View style={styles.topbar}>
-        <Text style={styles.wordmark}>PISTA</Text>
+        <PistaLogo size={24} />
         <View style={styles.topbarActions}>
           <Pressable style={styles.bellWrap} onPress={() => navigation.navigate('Challenges')}>
             <Ionicons name="trophy-outline" size={21} color={colors.text} />
@@ -169,7 +169,7 @@ export default function FeedScreen({ navigation }) {
           <View>
             <StoriesBar navigation={navigation} />
             {filter === 'todo' && <DailyChallengeCard navigation={navigation} />}
-            {filter === 'todo' && <MotivationCard navigation={navigation} />}
+            
           </View>
         }
         ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
@@ -221,16 +221,16 @@ const styles = StyleSheet.create({
   bellWrap: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: 1, right: 1, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: colors.clay, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   badgeText: { color: colors.bg, fontSize: 9, fontWeight: '800' },
-  fab: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
+  fab: { width: 40, height: 32, ...shape.button, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
   filters: { flexGrow: 0 },
   filtersContent: { paddingHorizontal: 16, gap: 8, paddingBottom: 10 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, ...shape.tag, paddingHorizontal: 14, paddingVertical: 8 },
   chipActive: { backgroundColor: colors.accent },
   chipText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
   chipTextActive: { color: colors.bg },
   list: { padding: 16, paddingTop: 6, gap: 14 },
   emptyWrap: { alignItems: 'center', gap: 12, marginTop: 28 },
   empty: { color: colors.textDim, textAlign: 'center' },
-  discoverBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10 },
+  discoverBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: colors.accent, ...shape.button, paddingHorizontal: 16, paddingVertical: 10 },
   discoverBtnText: { color: colors.bg, fontSize: 12, fontWeight: '800' },
 });

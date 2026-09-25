@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 import { iconFor } from '../lib/sports';
 import RouteMap from '../components/RouteMap';
 import SportLoader from '../components/SportLoader';
@@ -134,8 +134,8 @@ const styles = StyleSheet.create({
   miniValue: { color: colors.text, fontSize: 13, fontWeight: '800', marginTop: 3 },
   infoRow: { flexDirection: 'row', gap: 9, alignItems: 'center', backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 12 },
   infoText: { flex: 1, color: colors.textDim, fontSize: 11, lineHeight: 16 },
-  primary: { minHeight: 48, borderRadius: 999, backgroundColor: colors.accent, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  primary: { minHeight: 48, ...shape.button, backgroundColor: colors.accent, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   primaryText: { color: colors.bg, fontSize: 14, fontWeight: '900' },
-  secondary: { minHeight: 46, borderRadius: 999, borderWidth: 1, borderColor: colors.line, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  secondary: { minHeight: 46, ...shape.button, borderWidth: 1, borderColor: colors.line, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   secondaryText: { color: colors.accentStrong, fontSize: 13, fontWeight: '800' },
 });

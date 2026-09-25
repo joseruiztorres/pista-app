@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import Avatar from '../components/Avatar';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 
 export default function EditProfileScreen({ navigation }) {
   const { user, profile, refreshProfile } = useAuth();
@@ -138,6 +138,6 @@ const styles = StyleSheet.create({
   privacyHint: { color: colors.textDim, fontSize: 11, marginTop: 3 },
   usernameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   at: { color: colors.textDim, fontSize: 14, fontWeight: '700' },
-  btnPrimary: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 8, marginBottom: 32 },
+  btnPrimary: { backgroundColor: colors.accent, ...shape.button, paddingVertical: 14, alignItems: 'center', marginTop: 8, marginBottom: 32 },
   btnPrimaryText: { color: colors.bg, fontSize: 16, fontWeight: '700' },
 });

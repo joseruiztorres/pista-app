@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconForBadge } from '../lib/badges';
 import Avatar from '../components/Avatar';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 import HighlightsRow from '../components/HighlightsRow';
 import LevelCard from '../components/LevelCard';
 import { checkActivityBadges } from '../lib/awardBadges';
@@ -116,7 +116,7 @@ export default function ProfileScreen({ navigation }) {
 
       {badges.length > 0 && (
         <View style={styles.badgesRow}>
-          {badges.map((b) => (
+          {badges.slice(0, 6).map((b) => (
             <View key={b.id} style={styles.badge}>
               <Ionicons name={iconForBadge(b.id)} size={16} color={colors.amber} />
               <Text style={styles.badgeText}>{b.name}</Text>
@@ -155,12 +155,12 @@ const styles = StyleSheet.create({
   progressValue: { color: colors.accentStrong, fontSize: 18, fontWeight: '900' },
   progressLabel: { color: colors.textDim, fontSize: 10, marginTop: 2 },
   quickRow: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 },
-  quickAction: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, paddingVertical: 11 },
-  routeAction: { flexBasis: '100%' },
+  quickAction: { flexBasis: '47%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 14, paddingVertical: 11 },
+  routeAction: {},
   quickText: { color: colors.text, fontSize: 11, fontWeight: '800' },
   badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 18, paddingHorizontal: 24 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   badgeText: { color: colors.textDim, fontSize: 11, fontWeight: '600' },
-  logout: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: colors.line, borderRadius: 999, paddingVertical: 12, paddingHorizontal: 24, marginTop: 32 },
+  logout: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: colors.line, ...shape.button, paddingVertical: 12, paddingHorizontal: 24, marginTop: 32 },
   logoutText: { color: colors.clay, fontWeight: '700' },
 });
