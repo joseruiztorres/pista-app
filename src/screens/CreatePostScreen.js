@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
 import { checkActivityBadges, checkFirstPostBadge } from '../lib/awardBadges';
+import { extFromAsset } from '../lib/media';
 import RouteRecorder from '../components/RouteRecorder';
 import VideoPlayer from '../components/VideoPlayer';
 import { colors, shape } from '../lib/theme';
@@ -168,7 +169,7 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
 
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
-        const ext = img.uri.split('.').pop().split('?')[0] || 'jpg';
+        const ext = extFromAsset(img, 'jpg');
         const path = `${user.id}/${post.id}_${i}.${ext}`;
         const response = await fetch(img.uri);
         const blob = await response.blob();
@@ -180,7 +181,7 @@ export default function CreatePostScreen({ navigation, route: navRoute }) {
       }
 
       if (video) {
-        const ext = video.uri.split('.').pop().split('?')[0] || 'mp4';
+        const ext = extFromAsset(video, 'mp4');
         const path = `${user.id}/${post.id}_video.${ext}`;
         const response = await fetch(video.uri);
         const blob = await response.blob();
