@@ -60,6 +60,24 @@ const navTheme = {
   colors: { ...DarkTheme.colors, background: colors.bg, card: colors.surface, border: colors.line, primary: colors.accent, text: colors.text },
 };
 
+const linking = {
+  prefixes: ['pista://', 'https://pista-app-five.vercel.app'],
+  config: {
+    screens: {
+      Login: 'login', Onboarding: 'onboarding',
+      Tabs: { path: '', screens: { Inicio: '', Explorar: 'explorar', Registrar: 'registrar', Quedadas: 'quedadas', Perfil: 'perfil' } },
+      CrearPost: 'crear-publicacion', UserProfile: 'usuario/:profileId', PostDetail: 'publicacion/:postId',
+      CreateMeetup: 'quedadas/nueva', MeetupDetail: 'quedadas/:meetupId', Conversation: 'chat/:conversationId',
+      Notifications: 'notificaciones', Places: 'sitios', CreatePlace: 'sitios/nuevo', PlaceDetail: 'sitios/:placeId',
+      Search: 'buscar', EditProfile: 'perfil/editar', EditPost: 'publicacion/:postId/editar', FollowRequests: 'seguimiento/solicitudes',
+      AdminReports: 'admin/reportes', CreateMenu: 'crear', StoryPrivacy: 'historias/privacidad', Challenges: 'retos',
+      Progress: 'progreso', TrainingCalendar: 'calendario', Routes: 'rutas', ActivityDetail: 'actividad/:postId',
+      AthleteLevel: 'nivel', WeeklyRecap: 'semana', SocialChallenges: 'retos/amigos', CreateSocialChallenge: 'retos/amigos/nuevo',
+      Messages: 'mensajes', CreateStory: 'historias/nueva', StoryViewer: 'historias', CreateHighlight: 'destacados/nuevo',
+    },
+  },
+};
+
 const TAB_ICONS = { Inicio: 'home', Explorar: 'compass', Registrar: 'navigate-circle', Quedadas: 'location', Perfil: 'person' };
 
 function Tabs() {
@@ -159,7 +177,7 @@ export default function App() {
   return (
     <AuthProvider>
       <StatusBar style="light" />
-      <NavigationContainer theme={navTheme}>
+      <NavigationContainer theme={navTheme} linking={linking}>
         <RootNavigator />
       </NavigationContainer>
       <CelebrationOverlay />
