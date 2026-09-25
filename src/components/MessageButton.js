@@ -3,7 +3,7 @@ import { Pressable, Text, StyleSheet, ActivityIndicator, Alert } from 'react-nat
 import { useNavigation } from '@react-navigation/native';
 import { getOrCreateConversation } from '../lib/chat';
 import { useAuth } from '../context/AuthProvider';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 
 export default function MessageButton({ profileId, profileName }) {
   const { user } = useAuth();
@@ -32,6 +32,6 @@ export default function MessageButton({ profileId, profileName }) {
 }
 
 const styles = StyleSheet.create({
-  btn: { backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 22, alignItems: 'center', minWidth: 110 },
+  btn: { backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line, ...shape.button, paddingVertical: 10, paddingHorizontal: 22, alignItems: 'center', minWidth: 110 },
   text: { color: colors.text, fontWeight: '700', fontSize: 13 },
 });

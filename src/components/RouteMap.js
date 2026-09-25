@@ -116,8 +116,8 @@ export default function RouteMap({ route, comparisonRoute, height = 280, onPress
 const styles = StyleSheet.create({
   map: { position: 'relative', overflow: 'hidden', borderRadius: 18, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line },
   tile: { position: 'absolute', width: TILE_SIZE, height: TILE_SIZE },
-  legend: { position: 'absolute', top: 10, left: 10, flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 6, backgroundColor: 'rgba(15,23,18,0.86)' },
+  legend: { position: 'absolute', top: 10, left: 10, flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 6, backgroundColor: 'rgba(11,14,26,0.86)' },
   legendText: { color: colors.text, fontSize: 10, fontWeight: '800' },
   attribution: { position: 'absolute', right: 5, bottom: 5, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.9)' },
-  attributionText: { color: '#25302A', fontSize: 9, fontWeight: '600' },
+  attributionText: { color: '#1D2440', fontSize: 9, fontWeight: '600' },
 });

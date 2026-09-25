@@ -21,5 +21,5 @@ export default function VideoPlayer({ uri, style, autoplay = false, controls = t
 }
 
 const styles = StyleSheet.create({
-  wrap: { width: '100%', aspectRatio: 9 / 16, backgroundColor: '#050805', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: colors.line },
+  wrap: { width: '100%', aspectRatio: 9 / 16, backgroundColor: '#05060D', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: colors.line },
 });

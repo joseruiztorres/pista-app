@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 
 // state: null (cargando/no aplica) | 'none' | 'pending' | 'following'
 export default function FollowButton({ profileId, isPrivate, compact = false }) {
@@ -55,7 +55,7 @@ export default function FollowButton({ profileId, isPrivate, compact = false }) 
 }
 
 const styles = StyleSheet.create({
-  btn: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 22, alignItems: 'center', minWidth: 110 },
+  btn: { backgroundColor: colors.accent, ...shape.button, paddingVertical: 10, paddingHorizontal: 22, alignItems: 'center', minWidth: 110 },
   btnCompact: { minWidth: 82, paddingVertical: 8, paddingHorizontal: 13 },
   btnActive: { backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line },
   text: { color: colors.bg, fontWeight: '700', fontSize: 13 },

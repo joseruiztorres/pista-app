@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { iconFor } from '../lib/sports';
 import { checkActivityBadges } from '../lib/awardBadges';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 
 export default function DailyChallengeCard({ navigation }) {
   const { user, sportIds } = useAuth();
@@ -44,13 +44,13 @@ export default function DailyChallengeCard({ navigation }) {
         <View style={styles.topRow}>
           <Text style={styles.eyebrow}>Reto de hoy · hecho</Text>
           <View style={styles.streakChip}>
-            <Ionicons name="flame" size={14} color="#fff" />
+            <Ionicons name="flame" size={14} color={colors.bg} />
             <Text style={styles.streakChipText}>{streak}</Text>
           </View>
         </View>
         <Text style={styles.title}>Racha de {streak} días</Text>
         <Text style={styles.body}>Has marcado tu actividad de hoy. Vuelve mañana para no cortarla.</Text>
-        <Pressable style={styles.more} onPress={() => navigation?.navigate('Challenges')}><Text style={styles.moreText}>Ver objetivos y medallas</Text><Ionicons name="arrow-forward" size={14} color="#fff" /></Pressable>
+        <Pressable style={styles.more} onPress={() => navigation?.navigate('Challenges')}><Text style={styles.moreText}>Ver objetivos y medallas</Text><Ionicons name="arrow-forward" size={14} color={colors.bg} /></Pressable>
       </View>
     );
   }
@@ -60,7 +60,7 @@ export default function DailyChallengeCard({ navigation }) {
       <View style={styles.topRow}>
         <Text style={styles.eyebrow}>Reto de hoy</Text>
         <View style={styles.streakChip}>
-          <Ionicons name="flame" size={14} color="#fff" />
+          <Ionicons name="flame" size={14} color={colors.bg} />
           <Text style={styles.streakChipText}>{streak}</Text>
         </View>
       </View>
@@ -70,28 +70,28 @@ export default function DailyChallengeCard({ navigation }) {
         <View style={styles.row}>
           {(sports.length ? sports : []).map((s) => (
             <Pressable key={s.id} style={styles.qbtn} onPress={() => markDone(s.id)}>
-              <Ionicons name={iconFor(s.id)} size={18} color="#fff" />
+              <Ionicons name={iconFor(s.id)} size={18} color={colors.bg} />
               <Text style={styles.qbtnText}>{s.name}</Text>
             </Pressable>
           ))}
         </View>
       </ScrollView>
-      <Pressable style={styles.more} onPress={() => navigation?.navigate('Challenges')}><Text style={styles.moreText}>Ver todos los retos</Text><Ionicons name="arrow-forward" size={14} color="#fff" /></Pressable>
+      <Pressable style={styles.more} onPress={() => navigation?.navigate('Challenges')}><Text style={styles.moreText}>Ver todos los retos</Text><Ionicons name="arrow-forward" size={14} color={colors.bg} /></Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.accent, borderRadius: 22, padding: 16, gap: 10 },
+  card: { backgroundColor: colors.accent, borderTopLeftRadius: 28, borderBottomRightRadius: 28, borderTopRightRadius: 8, borderBottomLeftRadius: 8, padding: 16, gap: 10 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  eyebrow: { color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  streakChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  streakChipText: { color: '#fff', fontWeight: '700', fontSize: 12 },
-  title: { color: '#fff', fontSize: 20, fontWeight: '800' },
-  body: { color: 'rgba(255,255,255,0.85)', fontSize: 13, lineHeight: 18 },
+  eyebrow: { color: 'rgba(11,14,26,0.72)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  streakChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(11,14,26,0.12)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  streakChipText: { color: colors.bg, fontWeight: '700', fontSize: 12 },
+  title: { color: colors.bg, fontSize: 20, fontWeight: '800' },
+  body: { color: 'rgba(11,14,26,0.78)', fontSize: 13, lineHeight: 18 },
   row: { flexDirection: 'row', gap: 8 },
-  qbtn: { alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 14, paddingVertical: 10, paddingHorizontal: 14 },
-  qbtnText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  qbtn: { alignItems: 'center', gap: 4, backgroundColor: 'rgba(11,14,26,0.1)', ...shape.tag, paddingVertical: 10, paddingHorizontal: 14 },
+  qbtnText: { color: colors.bg, fontSize: 10, fontWeight: '700' },
   more: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5, paddingTop: 2 },
-  moreText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  moreText: { color: colors.bg, fontSize: 11, fontWeight: '800' },
 });

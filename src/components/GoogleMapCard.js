@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   tile: { position: 'absolute', width: TILE_SIZE, height: TILE_SIZE },
   dragHint: {
     position: 'absolute', top: 10, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(15,23,18,0.86)',
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(11,14,26,0.86)',
   },
   dragHintText: { color: colors.text, fontSize: 11, fontWeight: '700' },
   marker: {
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   },
   zoomControls: {
     position: 'absolute', right: 10, top: 52, borderRadius: 10, overflow: 'hidden',
-    backgroundColor: 'rgba(15,23,18,0.9)', borderWidth: 1, borderColor: colors.line,
+    backgroundColor: 'rgba(11,14,26,0.9)', borderWidth: 1, borderColor: colors.line,
   },
   zoomButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
   zoomButtonDisabled: { opacity: 0.35 },
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     position: 'absolute', right: 5, bottom: 5, paddingHorizontal: 5, paddingVertical: 2,
     borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.9)',
   },
-  attributionText: { color: '#25302A', fontSize: 9, fontWeight: '600' },
+  attributionText: { color: '#1D2440', fontSize: 9, fontWeight: '600' },
   emptyPreview: {
     minHeight: MAP_HEIGHT,
     padding: 20,

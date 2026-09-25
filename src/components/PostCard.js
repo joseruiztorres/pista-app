@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, Pressable, Modal, ScrollView, Alert, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 import { iconFor } from '../lib/sports';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   avatarText: { color: colors.bg, fontWeight: '700', fontSize: 13 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   name: { color: colors.text, fontWeight: '700', fontSize: 14 },
-  tag: { backgroundColor: colors.surface2, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+  tag: { backgroundColor: colors.surface2, ...shape.tag, paddingHorizontal: 8, paddingVertical: 2 },
   tagText: { color: colors.textDim, fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
   meta: { color: colors.textDim, fontSize: 11, marginTop: 2 },
   statsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },

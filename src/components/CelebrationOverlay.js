@@ -3,7 +3,7 @@ import { Animated, Modal, Pressable, StyleSheet, Text, View } from 'react-native
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthProvider';
 import { takeNextCelebration } from '../lib/celebrations';
-import { colors } from '../lib/theme';
+import { colors, shape } from '../lib/theme';
 
 export default function CelebrationOverlay() {
   const { user } = useAuth();
@@ -53,7 +53,7 @@ export default function CelebrationOverlay() {
 function Dot({ amber, style }) { return <View style={[styles.dot, amber && styles.dotAmber, style]} />; }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(6,10,7,0.88)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(6,8,18,0.88)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   sparkles: { ...StyleSheet.absoluteFillObject },
   dot: { position: 'absolute', width: 12, height: 12, borderRadius: 6, backgroundColor: colors.accentStrong },
   dotAmber: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.amber },
@@ -64,6 +64,6 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: 25, fontWeight: '900', textAlign: 'center', marginTop: 3 },
   body: { color: colors.textDim, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: 8 },
   xp: { color: colors.amber, fontSize: 15, fontWeight: '900', marginTop: 12 },
-  button: { marginTop: 22, width: '100%', flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14 },
+  button: { marginTop: 22, width: '100%', flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accent, ...shape.button, paddingVertical: 14 },
   buttonText: { color: colors.bg, fontSize: 13, fontWeight: '900' },
 });
