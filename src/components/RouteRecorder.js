@@ -2,10 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import RoutePreview from './RoutePreview';
 import RouteMap from './RouteMap';
 import { haversineKm, routeDistanceKm } from '../lib/geo';
 import { colors } from '../lib/theme';
+import { alert } from '../lib/alert';
 
 function formatDuration(sec) {
   const m = Math.floor(sec / 60).toString().padStart(2, '0');
@@ -13,12 +15,26 @@ function formatDuration(sec) {
   return `${m}:${s}`;
 }
 
+const BACKUP_KEY = '@pista:route_recording_backup';
+
+async function saveBackup(route, elapsedSec) {
+  try {
+    await AsyncStorage.setItem(BACKUP_KEY, JSON.stringify({ route, elapsedSec, savedAt: Date.now() }));
+  } catch (err) {
+    // Es solo una copia de seguridad local: si falla, la grabación sigue igual.
+  }
+}
+
+async function clearBackup() {
+  try { await AsyncStorage.removeItem(BACKUP_KEY); } catch (err) { /* no pasa nada */ }
+}
+
 // Graba una ruta real con la Geolocation API del navegador (watchPosition):
 // empezar/pausar/reanudar/parar, mapa en vivo (RoutePreview) y distancia,
 // duración y ritmo calculados a partir de las posiciones reales, no de un
 // trazado de ejemplo. Al terminar, entrega { route, distanceKm, durationMin }
 // al padre para que rellene el formulario de publicación.
-export default function RouteRecorder({ onFinish, targetRoute }) {
+export default function RouteRecorder({ onFinish, onReset, targetRoute }) {
   const [status, setStatus] = useState('idle'); // idle | recording | paused | done
   const [route, setRoute] = useState([]);
   const [elapsedSec, setElapsedSec] = useState(0);
@@ -28,10 +44,50 @@ export default function RouteRecorder({ onFinish, targetRoute }) {
   const startedAtRef = useRef(null);
   const pausedAccumRef = useRef(0);
   const routeRef = useRef([]);
+  const elapsedSecRef = useRef(0);
+  const jumpStreakRef = useRef(0);
 
   const available = Platform.OS !== 'web' || (typeof navigator !== 'undefined' && !!navigator.geolocation);
 
-  useEffect(() => () => stopWatch(), []);
+  // Si la app se recarga o se cierra a medio grabar (batería, un fallo del
+  // navegador, etc.), la grabación en curso se perdía por completo. Al
+  // montar, si hay una copia de seguridad reciente con al menos 2 puntos,
+  // ofrecemos recuperarla en vez de tirarla.
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(BACKUP_KEY);
+        if (!raw) return;
+        const backup = JSON.parse(raw);
+        if (!backup || !Array.isArray(backup.route) || backup.route.length < 2) {
+          await clearBackup();
+          return;
+        }
+        const minutesAgo = Math.max(0, Math.round((Date.now() - (backup.savedAt || Date.now())) / 60000));
+        alert(
+          'Grabación sin guardar',
+          `Encontramos una grabación de hace ${minutesAgo < 1 ? 'menos de un minuto' : minutesAgo + ' min'} que no llegaste a guardar. ¿Quieres recuperarla?`,
+          [
+            { text: 'Descartar', style: 'cancel', onPress: () => clearBackup() },
+            {
+              text: 'Recuperar',
+              onPress: () => {
+                routeRef.current = backup.route;
+                setRoute(backup.route);
+                pausedAccumRef.current = backup.elapsedSec || 0;
+                elapsedSecRef.current = backup.elapsedSec || 0;
+                setElapsedSec(backup.elapsedSec || 0);
+                setStatus('paused');
+              },
+            },
+          ]
+        );
+      } catch (err) {
+        // copia corrupta o AsyncStorage no disponible: la ignoramos sin más
+      }
+    })();
+    return () => stopWatch();
+  }, []);
 
   function stopWatch() {
     if (watchIdRef.current != null) {
@@ -48,7 +104,9 @@ export default function RouteRecorder({ onFinish, targetRoute }) {
   function startTimer() {
     startedAtRef.current = Date.now();
     timerRef.current = setInterval(() => {
-      setElapsedSec(pausedAccumRef.current + (Date.now() - startedAtRef.current) / 1000);
+      const next = pausedAccumRef.current + (Date.now() - startedAtRef.current) / 1000;
+      elapsedSecRef.current = next;
+      setElapsedSec(next);
     }, 1000);
   }
 
@@ -75,11 +133,24 @@ export default function RouteRecorder({ onFinish, targetRoute }) {
       const next = altitude == null ? [latitude, longitude] : [latitude, longitude, altitude];
       if (!prev.length) {
         routeRef.current = [next];
+        jumpStreakRef.current = 0;
+        saveBackup(routeRef.current, elapsedSecRef.current);
         return routeRef.current;
       }
       const deltaKm = haversineKm(prev[prev.length - 1], next);
-      if (deltaKm < 0.002 || deltaKm > 0.25) return prev;
+      if (deltaKm < 0.002) return prev; // ruido: demasiado cerca del último punto
+      if (deltaKm > 0.25) {
+        // Salto grande: normalmente es un error de GPS y lo descartamos. Pero
+        // si pasa varias veces seguidas (un túnel, el móvil suspendido, el
+        // GPS perdido un rato), el punto de referencia nunca se actualiza y
+        // la grabación se queda "atascada" para siempre. Tras unos cuantos
+        // rechazos seguidos, aceptamos el salto para poder seguir grabando.
+        jumpStreakRef.current += 1;
+        if (jumpStreakRef.current < 3) return prev;
+      }
+      jumpStreakRef.current = 0;
       routeRef.current = [...prev, next];
+      saveBackup(routeRef.current, elapsedSecRef.current);
       return routeRef.current;
     });
   }
@@ -93,7 +164,9 @@ export default function RouteRecorder({ onFinish, targetRoute }) {
     routeRef.current = [];
     setRoute([]);
     pausedAccumRef.current = 0;
+    elapsedSecRef.current = 0;
     setElapsedSec(0);
+    jumpStreakRef.current = 0;
     setStatus('recording');
     startTimer();
     try { await startLocationWatch(); } catch (err) { setError(err.message); stopWatch(); setStatus('idle'); }
@@ -115,6 +188,7 @@ export default function RouteRecorder({ onFinish, targetRoute }) {
     stopWatch();
     const finalRoute = routeRef.current;
     setStatus('done');
+    clearBackup();
     if (finalRoute.length < 2) {
       setError(finalRoute.length
         ? 'Solo hemos recibido un punto GPS. Muévete unos metros y prueba de nuevo para poder dibujar el recorrido.'
@@ -140,6 +214,10 @@ export default function RouteRecorder({ onFinish, targetRoute }) {
     setRoute([]);
     setError(null);
     setElapsedSec(0);
+    elapsedSecRef.current = 0;
+    jumpStreakRef.current = 0;
+    clearBackup();
+    onReset?.();
   }
 
   const distanceKm = routeDistanceKm(route);
