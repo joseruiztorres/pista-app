@@ -1,7 +1,7 @@
 import 'react-native-url-polyfill/auto';
-import React, { useEffect } from 'react';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { View, Text, Pressable, StyleSheet, Platform, PanResponder } from 'react-native';
+import { NavigationContainer, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,6 +56,7 @@ import { registerForPushNotificationsAsync } from './src/lib/pushNotifications';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const navigationRef = createNavigationContainerRef();
 
 const navTheme = {
   ...DarkTheme,
@@ -98,6 +99,7 @@ html body [dir], html body input, html body textarea { font-family: 'Archivo', s
 }
 
 const TAB_ICONS = { Inicio: 'home', Explorar: 'compass', Registrar: 'navigate-circle', Quedadas: 'location', Perfil: 'person' };
+const TAB_ORDER = ['Inicio', 'Explorar', 'Registrar', 'Quedadas', 'Perfil'];
 
 // Botón central de la barra: un "dorsal" amarillo para registrar actividad.
 function RecordTabButton({ onPress, accessibilityState }) {
@@ -119,24 +121,65 @@ const tabStyles = StyleSheet.create({
   recordLabel: { color: colors.textDim, fontSize: 10, fontWeight: '700' },
 });
 
+// Deslizar hacia los lados sobre cualquier pestaña cambia de pestaña, como
+// en muchas apps de redes sociales. Solo reacciona a gestos claramente
+// horizontales y ya avanzados (más ancho que alto, con recorrido de sobra),
+// así que el scroll vertical de las listas, los chips horizontales y el
+// carrusel de fotos de una publicación siguen funcionando con normalidad.
+function useTabSwipe() {
+  const indexRef = useRef(0);
+
+  const panResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onStartShouldSetPanResponderCapture: () => false,
+    onMoveShouldSetPanResponder: (_evt, gesture) => (
+      Math.abs(gesture.dx) > 32 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 2.5
+    ),
+    onPanResponderTerminationRequest: () => true,
+    onPanResponderRelease: (_evt, gesture) => {
+      if (Math.abs(gesture.dx) < 60 || !navigationRef.isReady?.()) return;
+      const direction = gesture.dx < 0 ? 1 : -1;
+      const nextIndex = Math.min(TAB_ORDER.length - 1, Math.max(0, indexRef.current + direction));
+      if (nextIndex !== indexRef.current) navigationRef.navigate(TAB_ORDER[nextIndex]);
+    },
+  }), []);
+
+  // Se llama desde el listener de estado del Tab.Navigator para saber
+  // desde qué pestaña partimos en cada gesto (sin provocar renders).
+  const setIndex = (i) => { indexRef.current = i; };
+
+  return { panHandlers: panResponder.panHandlers, setIndex };
+}
+
 function Tabs() {
+  const swipe = useTabSwipe();
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textDim,
-        tabBarStyle: { backgroundColor: colors.bg, borderTopColor: colors.line, height: 62, paddingTop: 6, paddingBottom: 8 },
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '700', letterSpacing: 0.2 },
-        tabBarIcon: ({ color, size }) => <Ionicons name={TAB_ICONS[route.name]} size={size - 4} color={color} />,
-      })}
-    >
-      <Tab.Screen name="Inicio" component={FeedScreen} />
-      <Tab.Screen name="Explorar" component={ExploreScreen} />
-      <Tab.Screen name="Registrar" component={RecordActivityScreen} options={{ tabBarLabel: 'Registrar', tabBarButton: (props) => <RecordTabButton {...props} /> }} />
-      <Tab.Screen name="Quedadas" component={MeetupsScreen} />
-      <Tab.Screen name="Perfil" component={ProfileScreen} />
-    </Tab.Navigator>
+    <View style={{ flex: 1 }} {...swipe.panHandlers}>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarActiveTintColor: colors.accent,
+          tabBarInactiveTintColor: colors.textDim,
+          tabBarStyle: { backgroundColor: colors.bg, borderTopColor: colors.line, height: 62, paddingTop: 6, paddingBottom: 8 },
+          tabBarLabelStyle: { fontSize: 10, fontWeight: '700', letterSpacing: 0.2 },
+          tabBarIcon: ({ color, size }) => <Ionicons name={TAB_ICONS[route.name]} size={size - 4} color={color} />,
+        })}
+        screenListeners={{
+          state: (e) => {
+            const state = e.data.state;
+            const name = state?.routes?.[state.index]?.name;
+            const i = TAB_ORDER.indexOf(name);
+            if (i >= 0) swipe.setIndex(i);
+          },
+        }}
+      >
+        <Tab.Screen name="Inicio" component={FeedScreen} />
+        <Tab.Screen name="Explorar" component={ExploreScreen} />
+        <Tab.Screen name="Registrar" component={RecordActivityScreen} options={{ tabBarLabel: 'Registrar', tabBarButton: (props) => <RecordTabButton {...props} /> }} />
+        <Tab.Screen name="Quedadas" component={MeetupsScreen} />
+        <Tab.Screen name="Perfil" component={ProfileScreen} />
+      </Tab.Navigator>
+    </View>
   );
 }
 
@@ -227,7 +270,7 @@ export default function App() {
   return (
     <AuthProvider>
       <StatusBar style="light" />
-      <NavigationContainer theme={navTheme} linking={linking}>
+      <NavigationContainer ref={navigationRef} theme={navTheme} linking={linking}>
         <RootNavigator />
       </NavigationContainer>
       <CelebrationOverlay />
