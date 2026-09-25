@@ -1,6 +1,6 @@
 import 'react-native-url-polyfill/auto';
 import React, { useEffect } from 'react';
-import { View, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -8,7 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 
 import { AuthProvider, useAuth } from './src/context/AuthProvider';
-import { colors } from './src/lib/theme';
+import { colors, shape } from './src/lib/theme';
+import { PistaMark } from './src/components/PistaLogo';
 
 import LoginScreen from './src/screens/LoginScreen';
 import OnboardingSportsScreen from './src/screens/OnboardingSportsScreen';
@@ -17,6 +18,7 @@ import CreatePostScreen from './src/screens/CreatePostScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import ComingSoonScreen from './src/screens/ComingSoonScreen';
 import RetosScreen from './src/screens/RetosScreen';
+import BadgesScreen from './src/screens/BadgesScreen';
 import UserProfileScreen from './src/screens/UserProfileScreen';
 import PostDetailScreen from './src/screens/PostDetailScreen';
 import MeetupsScreen from './src/screens/MeetupsScreen';
@@ -70,7 +72,7 @@ const linking = {
       CreateMeetup: 'quedadas/nueva', MeetupDetail: 'quedadas/:meetupId', Conversation: 'chat/:conversationId',
       Notifications: 'notificaciones', Places: 'sitios', CreatePlace: 'sitios/nuevo', PlaceDetail: 'sitios/:placeId',
       Search: 'buscar', EditProfile: 'perfil/editar', EditPost: 'publicacion/:postId/editar', FollowRequests: 'seguimiento/solicitudes',
-      AdminReports: 'admin/reportes', CreateMenu: 'crear', StoryPrivacy: 'historias/privacidad', Challenges: 'retos',
+      AdminReports: 'admin/reportes', CreateMenu: 'crear', StoryPrivacy: 'historias/privacidad', Challenges: 'retos', Badges: 'retos/medallas',
       Progress: 'progreso', TrainingCalendar: 'calendario', Routes: 'rutas', ActivityDetail: 'actividad/:postId',
       AthleteLevel: 'nivel', WeeklyRecap: 'semana', SocialChallenges: 'retos/amigos', CreateSocialChallenge: 'retos/amigos/nuevo',
       Messages: 'mensajes', CreateStory: 'historias/nueva', StoryViewer: 'historias', CreateHighlight: 'destacados/nuevo',
@@ -78,7 +80,44 @@ const linking = {
   },
 };
 
+// En web cargamos la tipografía de Pista (Archivo) y la aplicamos a todo el
+// texto. Los iconos llevan su fuente en línea, así que no se ven afectados.
+if (Platform.OS === 'web' && typeof document !== 'undefined' && !document.getElementById('pista-fonts')) {
+  const link = document.createElement('link');
+  link.id = 'pista-fonts';
+  link.rel = 'stylesheet';
+  link.href = 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..900&display=swap';
+  document.head.appendChild(link);
+  const style = document.createElement('style');
+  style.textContent = `html, body { background: ${colors.bg}; }
+html body [dir], html body input, html body textarea { font-family: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-stretch: 104%; }`;
+  document.head.appendChild(style);
+  let meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.appendChild(meta); }
+  meta.content = colors.bg;
+}
+
 const TAB_ICONS = { Inicio: 'home', Explorar: 'compass', Registrar: 'navigate-circle', Quedadas: 'location', Perfil: 'person' };
+
+// Botón central de la barra: un "dorsal" amarillo para registrar actividad.
+function RecordTabButton({ onPress, accessibilityState }) {
+  const focused = !!accessibilityState?.selected;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Registrar actividad" style={tabStyles.recordWrap}>
+      <View style={[tabStyles.recordBtn, focused && tabStyles.recordBtnFocused]}>
+        <Ionicons name="play" size={18} color={colors.bg} />
+      </View>
+      <Text style={[tabStyles.recordLabel, focused && { color: colors.accent }]}>Registrar</Text>
+    </Pressable>
+  );
+}
+
+const tabStyles = StyleSheet.create({
+  recordWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
+  recordBtn: { width: 50, height: 30, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', ...shape.button },
+  recordBtnFocused: { borderWidth: 2, borderColor: colors.text },
+  recordLabel: { color: colors.textDim, fontSize: 10, fontWeight: '700' },
+});
 
 function Tabs() {
   return (
@@ -87,13 +126,14 @@ function Tabs() {
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textDim,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.line },
+        tabBarStyle: { backgroundColor: colors.bg, borderTopColor: colors.line, height: 62, paddingTop: 6, paddingBottom: 8 },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '700', letterSpacing: 0.2 },
         tabBarIcon: ({ color, size }) => <Ionicons name={TAB_ICONS[route.name]} size={size - 4} color={color} />,
       })}
     >
       <Tab.Screen name="Inicio" component={FeedScreen} />
       <Tab.Screen name="Explorar" component={ExploreScreen} />
-      <Tab.Screen name="Registrar" component={RecordActivityScreen} options={{ tabBarLabel: 'Registrar' }} />
+      <Tab.Screen name="Registrar" component={RecordActivityScreen} options={{ tabBarLabel: 'Registrar', tabBarButton: (props) => <RecordTabButton {...props} /> }} />
       <Tab.Screen name="Quedadas" component={MeetupsScreen} />
       <Tab.Screen name="Perfil" component={ProfileScreen} />
     </Tab.Navigator>
@@ -112,7 +152,7 @@ function RootNavigator() {
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={colors.accent} />
+        <PistaMark size={56} />
       </View>
     );
   }
@@ -129,7 +169,16 @@ function RootNavigator() {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        headerStyle: { backgroundColor: colors.bg },
+        headerTintColor: colors.text,
+        headerTitleStyle: { fontWeight: '800' },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.bg },
+      }}
+    >
       {!session ? (
         <Stack.Screen name="Login" component={LoginScreen} />
       ) : !profile?.onboarded ? (
@@ -155,6 +204,7 @@ function RootNavigator() {
           <Stack.Screen name="CreateMenu" component={CreateMenuScreen} options={{ presentation: 'modal', headerShown: true, title: 'Crear' }} />
           <Stack.Screen name="StoryPrivacy" component={StoryPrivacyScreen} options={{ headerShown: true, title: 'Privacidad de historias' }} />
           <Stack.Screen name="Challenges" component={RetosScreen} options={{ headerShown: true, title: 'Retos' }} />
+          <Stack.Screen name="Badges" component={BadgesScreen} options={{ headerShown: true, title: 'Medallas' }} />
           <Stack.Screen name="Progress" component={ProgressScreen} options={{ headerShown: true, title: 'Mi progreso' }} />
           <Stack.Screen name="TrainingCalendar" component={TrainingCalendarScreen} options={{ headerShown: true, title: 'Calendario' }} />
           <Stack.Screen name="Routes" component={RoutesScreen} options={{ headerShown: true, title: 'Mis rutas' }} />
