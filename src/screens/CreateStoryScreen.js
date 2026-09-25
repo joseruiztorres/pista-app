@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthProvider';
 import { colors, shape } from '../lib/theme';
+import { extFromAsset } from '../lib/media';
 import VideoPlayer from '../components/VideoPlayer';
 
 export default function CreateStoryScreen({ navigation }) {
@@ -44,7 +45,7 @@ export default function CreateStoryScreen({ navigation }) {
     setSaving(true);
     try {
       const isVideo = asset.type === 'video';
-      const ext = asset.uri.split('.').pop().split('?')[0] || (isVideo ? 'mp4' : 'jpg');
+      const ext = extFromAsset(asset, isVideo ? 'mp4' : 'jpg');
       const path = `${user.id}/stories/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const response = await fetch(asset.uri);
       const blob = await response.blob();
