@@ -11,6 +11,7 @@ import MessageButton from '../components/MessageButton';
 import PostCard from '../components/PostCard';
 import Avatar from '../components/Avatar';
 import HighlightsRow from '../components/HighlightsRow';
+import { alert } from '../lib/alert';
 
 const POST_SELECT = '*, profiles:author_id(username, display_name), post_media(url, position, media_type), comments(count)';
 
@@ -88,9 +89,9 @@ export default function UserProfileScreen({ route, navigation }) {
   }
 
   function confirmBlock() {
-    Alert.alert('Bloquear perfil', `Dejaréis de veros y no podrá escribirte.`, [
+    alert('Bloquear perfil', `Dejaréis de veros y no podrá escribirte.`, [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Bloquear', style: 'destructive', onPress: async () => { const { error } = await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: profileId }); if (error) Alert.alert('No se pudo bloquear', error.message); else navigation.goBack(); } },
+      { text: 'Bloquear', style: 'destructive', onPress: async () => { const { error } = await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: profileId }); if (error) alert('No se pudo bloquear', error.message); else navigation.goBack(); } },
     ]);
   }
 
